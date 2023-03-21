@@ -11,6 +11,5 @@ public class Database {
     @Getter
     public static final Logger logger = Logger.getLogger("Database");
     public static void main(String[] args) {
-        System.out.println("Hello world!");
     }
 }

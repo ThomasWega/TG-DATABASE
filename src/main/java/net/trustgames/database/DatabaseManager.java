@@ -90,7 +90,6 @@ public class DatabaseManager {
             hikariConfig.addDataSourceProperty("user", user);
             hikariConfig.addDataSourceProperty("password", password);
             hikariConfig.setMaximumPoolSize(poolSize);
-            hikariConfig.setPoolName("HikariCP-Core");
 
             dataSource = new HikariDataSource(hikariConfig);
         });
