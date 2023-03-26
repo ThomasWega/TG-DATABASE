@@ -3,7 +3,6 @@ package net.trustgames.database;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -24,8 +23,7 @@ public class HikariManager {
     private static final Logger logger = Database.getLogger();
     private static HikariDataSource dataSource;
     @Getter
-    @Setter
-    private boolean disabled;
+    private final boolean disabled;
 
     /**
      * Sets parameters and creates new pool.
@@ -36,7 +34,10 @@ public class HikariManager {
                          @NotNull String ip,
                          @NotNull String port,
                          @NotNull String database,
-                         @NotNull Integer poolSize) {
+                         @NotNull Integer poolSize,
+                         boolean disabled) {
+        this.disabled = disabled;
+        if (isDisabled()) return;
         CompletableFuture.runAsync(() -> {
             HikariConfig hikariConfig = new HikariConfig();
             hikariConfig.setDriverClassName("org.mariadb.jdbc.Driver");
