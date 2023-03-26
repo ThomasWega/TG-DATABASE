@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  * plugin#getLogger is used instead of Bukkit#getLogger, because async methods should not access Bukkit API
  */
 @SuppressWarnings("unused")
-public class DatabaseManager {
+public class HikariManager {
 
     private static final Logger logger = Database.getLogger();
     private static HikariDataSource dataSource;
@@ -27,13 +27,26 @@ public class DatabaseManager {
     @Setter
     private boolean disabled;
 
-    public DatabaseManager(@NotNull String user,
-                           @NotNull String password,
-                           @NotNull String ip,
-                           @NotNull String port,
-                           @NotNull String database,
-                           @NotNull Integer poolSize) {
-        initializePool(user, password, ip, port, database, poolSize);
+    /**
+     * Sets parameters and creates new pool.
+     * (is run async)
+     */
+    public HikariManager(@NotNull String user,
+                         @NotNull String password,
+                         @NotNull String ip,
+                         @NotNull String port,
+                         @NotNull String database,
+                         @NotNull Integer poolSize) {
+        CompletableFuture.runAsync(() -> {
+            HikariConfig hikariConfig = new HikariConfig();
+            hikariConfig.setDriverClassName("org.mariadb.jdbc.Driver");
+            hikariConfig.setJdbcUrl("jdbc:mariadb://" + ip + ":" + port + "/" + database);
+            hikariConfig.addDataSourceProperty("user", user);
+            hikariConfig.addDataSourceProperty("password", password);
+            hikariConfig.setMaximumPoolSize(poolSize);
+
+            dataSource = new HikariDataSource(hikariConfig);
+        });
     }
 
     /**
@@ -70,29 +83,6 @@ public class DatabaseManager {
             logger.severe("Getting a new connection from HikariCP");
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Gets the mariadb credentials from the config file and sets parameters for the pool.
-     * Then it creates the new pool
-     * (is run async)
-     */
-    private void initializePool(@NotNull String user,
-                               @NotNull String password,
-                               @NotNull String ip,
-                               @NotNull String port,
-                               @NotNull String database,
-                               @NotNull Integer poolSize) {
-        CompletableFuture.runAsync(() -> {
-            HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setDriverClassName("org.mariadb.jdbc.Driver");
-            hikariConfig.setJdbcUrl("jdbc:mariadb://" + ip + ":" + port + "/" + database);
-            hikariConfig.addDataSourceProperty("user", user);
-            hikariConfig.addDataSourceProperty("password", password);
-            hikariConfig.setMaximumPoolSize(poolSize);
-
-            dataSource = new HikariDataSource(hikariConfig);
-        });
     }
 
     /**
