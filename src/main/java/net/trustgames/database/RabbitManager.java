@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 public class RabbitManager {
@@ -54,7 +55,7 @@ public class RabbitManager {
      *
      * @param json JSON to send as body of the message
      */
-    public void send(@NotNull JSONObject json) {
+    public void send(JSONObject json) {
         CompletableFuture.runAsync(() -> {
             try {
                 channel.basicPublish("", queueName, null, json.toString().getBytes());
@@ -71,7 +72,7 @@ public class RabbitManager {
      * @param callback Callback to be run everytime a message is received
      * @throws IOException if an error occurred
      */
-    public void delivery(Consumer<JSONObject> callback) throws IOException {
+    public void onDelivery(Consumer<JSONObject> callback) throws IOException {
         channel.basicConsume(queueName, true, new DefaultConsumer(channel) {
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, com.rabbitmq.client.AMQP.BasicProperties properties, byte[] body) {
@@ -80,6 +81,24 @@ public class RabbitManager {
                 callback.accept(json);
             }
         });
+    }
+
+    /**
+     * Close all connections, channels
+     * and set factory to null
+     */
+    public void close() throws IOException {
+        if (channel != null) {
+            try {
+                channel.close();
+            } catch (TimeoutException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        if (connection != null) {
+            connection.close();
+        }
+        factory = null;
     }
 
 }
