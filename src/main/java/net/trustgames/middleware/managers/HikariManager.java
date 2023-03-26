@@ -1,8 +1,8 @@
-package net.trustgames.database;
+package net.trustgames.middleware.managers;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import lombok.Getter;
+import net.trustgames.middleware.Middleware;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -17,13 +17,10 @@ import java.util.logging.Logger;
  * creating the database, table (if not exists) and closing the hikari connection. Note that the
  * plugin#getLogger is used instead of Bukkit#getLogger, because async methods should not access Bukkit API
  */
-@SuppressWarnings("unused")
-public class HikariManager {
+public final class HikariManager {
 
-    private static final Logger logger = Database.getLogger();
+    private static final Logger logger = Middleware.getLogger();
     private static HikariDataSource dataSource;
-    @Getter
-    private final boolean disabled;
 
     /**
      * Sets parameters and creates new pool.
@@ -34,10 +31,7 @@ public class HikariManager {
                          @NotNull String ip,
                          @NotNull String port,
                          @NotNull String database,
-                         @NotNull Integer poolSize,
-                         boolean disabled) {
-        this.disabled = disabled;
-        if (isDisabled()) return;
+                         @NotNull Integer poolSize) {
         CompletableFuture.runAsync(() -> {
             HikariConfig hikariConfig = new HikariConfig();
             hikariConfig.setDriverClassName("org.mariadb.jdbc.Driver");
@@ -130,7 +124,7 @@ public class HikariManager {
         });
     }
 
-    public void closeHikari() {
+    public void close() {
         dataSource.close();
     }
 }

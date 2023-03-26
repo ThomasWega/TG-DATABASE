@@ -1,7 +1,6 @@
-package net.trustgames.database;
+package net.trustgames.middleware.managers;
 
 import com.rabbitmq.client.*;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
@@ -11,14 +10,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-public class RabbitManager {
+public final class RabbitManager {
 
     private ConnectionFactory factory;
     private Connection connection;
     private Channel channel;
     private final String queueName;
-    @Getter
-    private final boolean disabled;
 
     /**
      * Sets parameters and creates new channel and queue.
@@ -28,11 +25,8 @@ public class RabbitManager {
                          @NotNull String password,
                          @NotNull String ip,
                          @NotNull Integer port,
-                         @NotNull String queueName,
-                         boolean disabled) {
+                         @NotNull String queueName) {
         this.queueName = queueName;
-        this.disabled = disabled;
-        if (isDisabled()) return;
         CompletableFuture.runAsync(() -> {
             this.factory = new ConnectionFactory();
             factory.setUsername(user);
@@ -43,7 +37,7 @@ public class RabbitManager {
                 this.connection = factory.newConnection();
                 this.channel = connection.createChannel();
                 this.channel.queueDeclare(queueName, true, false, false, null);
-            } catch (Exception e) {
+            } catch (IOException | TimeoutException e){
                 e.printStackTrace();
             }
         });
@@ -56,6 +50,9 @@ public class RabbitManager {
      * @param json JSON to send as body of the message
      */
     public void send(JSONObject json) {
+        if (channel == null) {
+            return;
+        }
         CompletableFuture.runAsync(() -> {
             try {
                 channel.basicPublish("", queueName, null, json.toString().getBytes());
