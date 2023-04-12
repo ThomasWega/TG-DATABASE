@@ -1,9 +1,9 @@
 package net.trustgames.middleware.cache;
 
 import net.trustgames.middleware.Middleware;
-import net.trustgames.middleware.database.player.data.PlayerDataFetcher;
 import net.trustgames.middleware.database.player.data.config.PlayerDataIntervalConfig;
 import net.trustgames.middleware.database.player.data.config.PlayerDataType;
+import net.trustgames.middleware.database.player.data.uuid.PlayerUUIDFetcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.Jedis;
@@ -52,8 +52,8 @@ public final class UUIDCache {
 
             // database
             if (uuidString == null) {
-                PlayerDataFetcher dataFetcher = new PlayerDataFetcher(middleware, PlayerDataType.UUID);
-                dataFetcher.fetchUUID(playerName, uuid -> {
+                PlayerUUIDFetcher uuidFetcher = new PlayerUUIDFetcher(middleware);
+                uuidFetcher.fetch(playerName, uuid -> {
                     // if still null, there is no data on the player even in the database
                     if (uuid != null)
                         update(uuid);
