@@ -65,11 +65,10 @@ public final class RabbitManager {
 
     /**
      * Handle the delivery of the message in the queue and everytime a
-     * message is recieved, a callback is run.
+     * message is received, a callback is run.
      *
      * @param queueName Name of the queue to consume messages from
      * @param callback Callback to be run everytime a message is received
-     * @throws IOException if an error occurred
      */
     public void onDelivery(String queueName, Consumer<JSONObject> callback) {
         try {

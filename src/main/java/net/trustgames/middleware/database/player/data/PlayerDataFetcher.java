@@ -2,14 +2,15 @@ package net.trustgames.middleware.database.player.data;
 
 import net.trustgames.middleware.Middleware;
 import net.trustgames.middleware.cache.PlayerDataCache;
-import net.trustgames.middleware.cache.UUIDCache;
+import net.trustgames.middleware.config.RabbitQueues;
 import net.trustgames.middleware.database.player.data.config.PlayerDataType;
-import net.trustgames.middleware.database.player.data.event.PlayerDataUpdateEvent;
 import net.trustgames.middleware.database.player.data.level.PlayerLevel;
+import net.trustgames.middleware.database.player.data.uuid.PlayerUUIDFetcher;
 import net.trustgames.middleware.managers.HikariManager;
 import net.trustgames.middleware.utils.LevelUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -39,6 +40,11 @@ public final class PlayerDataFetcher {
         this.middleware = middleware;
         this.dataType = dataType;
         this.hikariManager = middleware.getHikariManager();
+
+        if (dataType == PlayerDataType.UUID) {
+            throw new RuntimeException(this.getClass().getName() + " can't be used to retrieve UUID. " +
+                    "Use the " + PlayerUUIDFetcher.class.getName() + " instead!");
+        }
     }
 
     /**
@@ -48,19 +54,13 @@ public final class PlayerDataFetcher {
      *
      * @param callback Callback where the result will be saved
      * @implNote Can't fetch player's UUID!
-     * @see PlayerDataFetcher#fetchUUID(String, Consumer)
+     * @see PlayerDataFetcher#fetch(UUID, Consumer)
      */
     public void fetch(@NotNull UUID uuid, Consumer<@Nullable String> callback) {
         if (hikariManager == null){
-            callback.accept(null);
+            Middleware.getLogger().severe("HikariManager is not initialized");
             return;
         }
-
-        if (dataType == PlayerDataType.UUID) {
-            throw new RuntimeException(this.getClass().getName() + " can't be used to retrieve UUID. " +
-                    "Use the " + UUIDCache.class.getName() + " instead!");
-        }
-
 
         CompletableFuture.runAsync(() -> {
             if (dataType == PlayerDataType.LEVEL) {
@@ -87,42 +87,6 @@ public final class PlayerDataFetcher {
         });
     }
 
-
-    /**
-     * Gets specifically only the Player's uuid by his name from the database.
-     * This whole operation is run async, and the result is saved
-     * in the callback. If no result is found, null is returned
-     *
-     * @param callback Callback where the result will be saved
-     * @implNote Can't fetch anything other that Player's UUID!
-     * @see PlayerDataFetcher#fetch(UUID, Consumer)
-     */
-    public void fetchUUID(@NotNull String playerName, Consumer<@Nullable UUID> callback) {
-        if (hikariManager == null){
-            callback.accept(null);
-            return;
-        }
-        CompletableFuture.runAsync(() -> {
-            try (Connection connection = hikariManager.getConnection();
-                 PreparedStatement statement = connection.prepareStatement("SELECT uuid FROM " + tableName + " WHERE name = ?")) {
-                statement.setString(1, playerName);
-                ResultSet result = statement.executeQuery();
-                if (result.next()) {
-                    String stringUuid = result.getString("uuid");
-                    try {
-                        callback.accept(UUID.fromString(stringUuid));
-                        return;
-                    } catch (IllegalArgumentException e) {
-                        throw new RuntimeException("INVALID UUID FOR: " + stringUuid, e);
-                    }
-                }
-                callback.accept(null);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
     /**
      * Updates the given DataType column with the given object
      * It uses transactions, to ensure that other updates don't interfere
@@ -132,7 +96,10 @@ public final class PlayerDataFetcher {
      * @param object Object to update the DataType with
      */
     public void update(@NotNull UUID uuid, @NotNull Object object) {
-        if (hikariManager == null) return;
+        if (hikariManager == null) {
+            Middleware.getLogger().severe("HikariManager is not initialized");
+            return;
+        }
 
         // if XP, the level also needs to be recalculated and updated
         if (dataType == PlayerDataType.XP) {
@@ -166,7 +133,13 @@ public final class PlayerDataFetcher {
             playerDataCache.update(object.toString());
 
             // call the event from the main thread
-            PlayerDataUpdateEvent.fire(new PlayerDataUpdateEvent(uuid));
+            System.out.println("CALLED!");
+            if (middleware.getRabbitManager() != null) {
+                System.out.println("NOT NULL");
+                middleware.getRabbitManager().send(RabbitQueues.PLAYER_DATA_UPDATE_EVENT.name, new JSONObject().put("uuid", uuid));
+            } else {
+                System.out.println("NULL");
+            }
         } catch (SQLException e) {
             try {
                 connection.rollback();
