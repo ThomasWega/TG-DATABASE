@@ -1,6 +1,7 @@
 package net.trustgames.middleware.managers;
 
 import com.rabbitmq.client.*;
+import net.trustgames.middleware.config.RabbitQueues;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
@@ -15,7 +16,6 @@ public final class RabbitManager {
     private ConnectionFactory factory;
     private Connection connection;
     private Channel channel;
-    private final String queueName;
 
     /**
      * Sets parameters and creates new channel and queue.
@@ -24,9 +24,7 @@ public final class RabbitManager {
     public RabbitManager(@NotNull String user,
                          @NotNull String password,
                          @NotNull String ip,
-                         @NotNull Integer port,
-                         @NotNull String queueName) {
-        this.queueName = queueName;
+                         @NotNull Integer port) {
         CompletableFuture.runAsync(() -> {
             this.factory = new ConnectionFactory();
             factory.setUsername(user);
@@ -36,7 +34,9 @@ public final class RabbitManager {
             try {
                 this.connection = factory.newConnection();
                 this.channel = connection.createChannel();
-                this.channel.queueDeclare(queueName, true, false, false, null);
+                for (RabbitQueues queue : RabbitQueues.values()){
+                    this.channel.queueDeclare(queue.name, false, false, false, null);
+                }
             } catch (IOException | TimeoutException e){
                 e.printStackTrace();
             }
@@ -47,16 +47,17 @@ public final class RabbitManager {
      * Send a json message to the specified queue
      * (is run async)
      *
+     * @param queueName Name of the queue to publish the json to
      * @param json JSON to send as body of the message
      */
-    public void send(JSONObject json) {
+    public void send(String queueName, JSONObject json) {
         if (channel == null) {
             return;
         }
         CompletableFuture.runAsync(() -> {
             try {
                 channel.basicPublish("", queueName, null, json.toString().getBytes());
-            } catch (Exception e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         });
@@ -66,36 +67,44 @@ public final class RabbitManager {
      * Handle the delivery of the message in the queue and everytime a
      * message is recieved, a callback is run.
      *
+     * @param queueName Name of the queue to consume messages from
      * @param callback Callback to be run everytime a message is received
      * @throws IOException if an error occurred
      */
-    public void onDelivery(Consumer<JSONObject> callback) throws IOException {
-        channel.basicConsume(queueName, true, new DefaultConsumer(channel) {
-            @Override
-            public void handleDelivery(String consumerTag, Envelope envelope, com.rabbitmq.client.AMQP.BasicProperties properties, byte[] body) {
-                String fullMessage = new String(body, StandardCharsets.UTF_8);
-                JSONObject json = new JSONObject(fullMessage);
-                callback.accept(json);
-            }
-        });
+    public void onDelivery(String queueName, Consumer<JSONObject> callback) {
+        try {
+            channel.basicConsume(queueName, true, new DefaultConsumer(channel) {
+                @Override
+                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+                    String fullMessage = new String(body, StandardCharsets.UTF_8);
+                    JSONObject json = new JSONObject(fullMessage);
+                    callback.accept(json);
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * Close all connections, channels
      * and set factory to null
      */
-    public void close() throws IOException {
+    public void close() {
         if (channel != null) {
             try {
                 channel.close();
-            } catch (TimeoutException e) {
+            } catch (TimeoutException | IOException e) {
                 throw new RuntimeException(e);
             }
         }
         if (connection != null) {
-            connection.close();
+            try {
+                connection.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         factory = null;
     }
-
 }

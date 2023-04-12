@@ -29,6 +29,32 @@ public final class MiniMessageUtils {
 
     /**
      * MiniMessage instance, which replaces
+     * various tags in the message with values of the player
+     * Some tags work only for offline players or online players!
+     *
+     * @param playerName Name of the Player
+     * @param prefix Prefix of the player
+     * @return new MiniMessage with formatter ready
+     */
+    public static MiniMessage withPrefix(@NotNull String playerName,
+                                         @NotNull Component prefix) {
+        if (!prefix.equals(Component.text(""))) {
+            prefix = prefix.append(Component.text(" "));
+        }
+
+        return MiniMessage.builder()
+                .tags(TagResolver.builder()
+                        .resolver(StandardTags.defaults())
+                        .resolver(TagResolver.resolver("player_name", Tag.selfClosingInserting(Component.text(
+                                playerName))))
+                        .resolver(TagResolver.resolver("prefix", Tag.selfClosingInserting(prefix)))
+                        .build()
+                )
+                .build();
+    }
+
+    /**
+     * MiniMessage instance, which replaces
      * various currency tags in the message with
      * data values of the player
      *
