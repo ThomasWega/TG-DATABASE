@@ -7,6 +7,7 @@ import net.trustgames.middleware.database.player.data.config.PlayerDataType;
 import net.trustgames.middleware.database.player.data.level.PlayerLevel;
 import net.trustgames.middleware.database.player.data.uuid.PlayerUUIDFetcher;
 import net.trustgames.middleware.managers.HikariManager;
+import net.trustgames.middleware.managers.RabbitManager;
 import net.trustgames.middleware.utils.LevelUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,17 +30,19 @@ import static net.trustgames.middleware.database.player.data.PlayerDataDB.tableN
 public final class PlayerDataFetcher {
 
     private final Middleware middleware;
-
     @Nullable
     private final HikariManager hikariManager;
+    @Nullable
+    private final RabbitManager rabbitManager;
     private PlayerDataType dataType;
 
 
     public PlayerDataFetcher(@NotNull Middleware middleware,
                              @NotNull PlayerDataType dataType) {
         this.middleware = middleware;
-        this.dataType = dataType;
         this.hikariManager = middleware.getHikariManager();
+        this.rabbitManager = middleware.getRabbitManager();
+        this.dataType = dataType;
 
         if (dataType == PlayerDataType.UUID) {
             throw new RuntimeException(this.getClass().getName() + " can't be used to retrieve UUID. " +
@@ -133,12 +136,9 @@ public final class PlayerDataFetcher {
             playerDataCache.update(object.toString());
 
             // call the event from the main thread
-            System.out.println("CALLED!");
-            if (middleware.getRabbitManager() != null) {
-                System.out.println("NOT NULL");
-                middleware.getRabbitManager().send(RabbitQueues.PLAYER_DATA_UPDATE_EVENT.name, new JSONObject().put("uuid", uuid));
-            } else {
-                System.out.println("NULL");
+
+            if (rabbitManager != null) {
+                rabbitManager.send(RabbitQueues.PLAYER_DATA_UPDATE_EVENT.name, new JSONObject().put("uuid", uuid));
             }
         } catch (SQLException e) {
             try {
