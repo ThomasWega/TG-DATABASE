@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -90,13 +91,17 @@ public final class HikariManager {
             } else {
                 // if dataSource is null, schedule the callback to be run when it is initialized
                 try {
-                    Thread.sleep(10000L);
+                    Thread.sleep(500L);
                     onDataSourceInitialized(callback);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
-        });
+        }).orTimeout(10L, TimeUnit.SECONDS)
+                .exceptionally(throwable -> {
+                    Middleware.getLogger().severe("HikariCP data source initialization timed out!");
+                    return null;
+                });
     }
 
     /**

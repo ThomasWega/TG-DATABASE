@@ -1,6 +1,7 @@
 package net.trustgames.middleware.managers;
 
 import com.rabbitmq.client.*;
+import net.trustgames.middleware.Middleware;
 import net.trustgames.middleware.config.RabbitQueues;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -8,6 +9,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
@@ -95,13 +97,17 @@ public final class RabbitManager {
             } else {
                 // if channel is null, schedule the callback to be run when it is initialized
                 try {
-                    Thread.sleep(10000L);
+                    Thread.sleep(500L);
                     onChannelInitialized(callback);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
-        });
+        }).orTimeout(10L, TimeUnit.SECONDS)
+                .exceptionally(throwable -> {
+                    Middleware.getLogger().severe("RabbitMQ channel initialization timed out!");
+                    return null;
+                });
     }
 
     /**
