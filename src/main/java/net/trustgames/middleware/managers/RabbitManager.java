@@ -70,7 +70,7 @@ public final class RabbitManager {
      * @param queueName Name of the queue to consume messages from
      * @param callback Callback to be run everytime a message is received
      */
-    public void onDelivery(String queueName, Consumer<JSONObject> callback) {
+    public void onDelivery(@NotNull String queueName, Consumer<JSONObject> callback) {
         try {
             channel.basicConsume(queueName, true, new DefaultConsumer(channel) {
                 @Override
@@ -83,6 +83,25 @@ public final class RabbitManager {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * @param callback When channel is initialized
+     */
+    public void onChannelInitialized(Runnable callback) {
+        CompletableFuture.runAsync(() -> {
+            if (channel != null) {
+                callback.run();
+            } else {
+                // if channel is null, schedule the callback to be run when it is initialized
+                try {
+                    Thread.sleep(10000L);
+                    onChannelInitialized(callback);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 
     /**
