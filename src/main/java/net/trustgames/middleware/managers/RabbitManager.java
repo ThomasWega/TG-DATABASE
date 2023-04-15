@@ -2,7 +2,7 @@ package net.trustgames.middleware.managers;
 
 import com.rabbitmq.client.*;
 import net.trustgames.middleware.Middleware;
-import net.trustgames.middleware.config.RabbitQueues;
+import net.trustgames.middleware.config.rabbit.RabbitQueues;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 

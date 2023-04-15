@@ -2,7 +2,7 @@ package net.trustgames.middleware.database.player.data;
 
 import net.trustgames.middleware.Middleware;
 import net.trustgames.middleware.cache.PlayerDataCache;
-import net.trustgames.middleware.config.RabbitQueues;
+import net.trustgames.middleware.config.rabbit.RabbitQueues;
 import net.trustgames.middleware.database.player.data.config.PlayerDataType;
 import net.trustgames.middleware.database.player.data.level.PlayerLevel;
 import net.trustgames.middleware.database.player.data.uuid.PlayerUUIDFetcher;
