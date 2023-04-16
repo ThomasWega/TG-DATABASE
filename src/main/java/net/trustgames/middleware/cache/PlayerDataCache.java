@@ -10,7 +10,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -41,12 +40,10 @@ public final class PlayerDataCache {
      */
     public void update(@NotNull String value) {
         if (pool == null) return;
-        CompletableFuture.runAsync(() -> {
-            try (Jedis jedis = pool.getResource()) {
-                String column = dataType.getColumnName();
-                jedis.hset(uuid.toString(), column, value);
-            }
-        });
+        try (Jedis jedis = pool.getResource()) {
+            String column = dataType.getColumnName();
+            jedis.hset(uuid.toString(), column, value);
+        }
     }
 
     /**
@@ -59,29 +56,27 @@ public final class PlayerDataCache {
      * @param callback Callback where the result is saved
      */
     public void get(Consumer<@Nullable String> callback) {
-        CompletableFuture.runAsync(() -> {
-            String result = null;
+        String result = null;
 
-            // cache
-            if (pool != null){
-                try (Jedis jedis = pool.getResource()) {
-                    result = jedis.hget(uuid.toString(), dataType.getColumnName());
-                    jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
-                }
+        // cache
+        if (pool != null) {
+            try (Jedis jedis = pool.getResource()) {
+                result = jedis.hget(uuid.toString(), dataType.getColumnName());
+                jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
             }
+        }
 
-            // database
-            if (result == null) {
-                PlayerDataFetcher dataFetcher = new PlayerDataFetcher(middleware, dataType);
-                dataFetcher.fetch(uuid, data -> {
-                    // if still null, there is no data on the player even in the database
-                    if (data != null)
-                        update(data);
-                    callback.accept(data);
-                });
-                return;
-            }
-            callback.accept(result);
-        });
+        // database
+        if (result == null) {
+            PlayerDataFetcher dataFetcher = new PlayerDataFetcher(middleware, dataType);
+            dataFetcher.fetch(uuid, data -> {
+                // if still null, there is no data on the player even in the database
+                if (data != null)
+                    update(data);
+                callback.accept(data);
+            });
+            return;
+        }
+        callback.accept(result);
     }
 }

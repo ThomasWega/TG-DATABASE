@@ -10,7 +10,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -18,9 +17,9 @@ import java.util.function.Consumer;
  */
 public final class UUIDCache {
 
+    private static final String field = PlayerDataType.UUID.getColumnName();
     private final JedisPool pool;
     private final Middleware middleware;
-    private static final String field = PlayerDataType.UUID.getColumnName();
     private final String playerName;
 
     public UUIDCache(@NotNull Middleware middleware,
@@ -39,31 +38,29 @@ public final class UUIDCache {
      * @param callback Where the UUID of the player, or null will be saved
      */
     public void get(Consumer<@Nullable UUID> callback) {
-        CompletableFuture.runAsync(() -> {
-            String uuidString = null;
+        String uuidString = null;
 
-            // cache
-            if (pool != null) {
-                try (Jedis jedis = pool.getResource()) {
-                    uuidString = jedis.hget(playerName, field);
-                    jedis.expire(playerName, PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
-                }
+        // cache
+        if (pool != null) {
+            try (Jedis jedis = pool.getResource()) {
+                uuidString = jedis.hget(playerName, field);
+                jedis.expire(playerName, PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
             }
+        }
 
-            // database
-            if (uuidString == null) {
-                PlayerUUIDFetcher uuidFetcher = new PlayerUUIDFetcher(middleware);
-                uuidFetcher.fetch(playerName, uuid -> {
-                    // if still null, there is no data on the player even in the database
-                    if (uuid != null)
-                        update(uuid);
+        // database
+        if (uuidString == null) {
+            PlayerUUIDFetcher uuidFetcher = new PlayerUUIDFetcher(middleware);
+            uuidFetcher.fetch(playerName, uuid -> {
+                // if still null, there is no data on the player even in the database
+                if (uuid != null)
+                    update(uuid);
 
-                    callback.accept(uuid);
-                });
-                return;
-            }
-            callback.accept(UUID.fromString(uuidString));
-        });
+                callback.accept(uuid);
+            });
+            return;
+        }
+        callback.accept(UUID.fromString(uuidString));
     }
 
     /**
@@ -73,10 +70,8 @@ public final class UUIDCache {
      */
     public void update(@NotNull UUID uuid) {
         if (pool == null) return;
-        CompletableFuture.runAsync(() -> {
-            try (Jedis jedis = pool.getResource()) {
-                jedis.hset(playerName, field, uuid.toString());
-            }
-        });
+        try (Jedis jedis = pool.getResource()) {
+            jedis.hset(playerName, field, uuid.toString());
+        }
     }
 }

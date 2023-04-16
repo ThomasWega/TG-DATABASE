@@ -27,33 +27,35 @@ public final class RabbitManager {
                          @NotNull String password,
                          @NotNull String ip,
                          @NotNull Integer port) {
-        CompletableFuture.runAsync(() -> {
-            this.factory = new ConnectionFactory();
-            factory.setUsername(user);
-            factory.setPassword(password);
-            factory.setHost(ip);
-            factory.setPort(port);
-            try {
-                this.connection = factory.newConnection();
-                this.channel = connection.createChannel();
-                for (RabbitQueues queue : RabbitQueues.values()){
-                    this.channel.queueDeclare(queue.name, false, false, false, null);
-                }
-            } catch (IOException | TimeoutException e){
-                e.printStackTrace();
+        this.factory = new ConnectionFactory();
+        this.factory.setUsername(user);
+        this.factory.setPassword(password);
+        this.factory.setHost(ip);
+        this.factory.setPort(port);
+        try {
+            this.connection = factory.newConnection();
+            this.channel = connection.createChannel();
+            for (RabbitQueues queue : RabbitQueues.values()) {
+                this.channel.queueDeclare(queue.name, false, false, false, null);
             }
-        });
+        } catch (IOException | TimeoutException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
      * Send a json message to the specified queue in fire-and-forget mode
-     * (is run async)
+     * (is run sync)
      *
      * @param queueName Name of the queue to publish the json to
-     * @param json JSON to send as body of the message
-     * @param ttl Time to live in milliseconds
+     * @param json      JSON to send as body of the message
+     * @param ttl       Time to live in milliseconds
+     * @see RabbitManager#fireAndForgetAsync(String, JSONObject, long)
      */
-    public void fireAndForget(String queueName, JSONObject json, long ttl) {
+    public void fireAndForget(@NotNull String queueName,
+                              @NotNull JSONObject json,
+                              long ttl) {
+
         if (channel == null) {
             return;
         }
@@ -62,13 +64,26 @@ public final class RabbitManager {
                 .expiration(String.valueOf(ttl))
                 .build();
 
-        CompletableFuture.runAsync(() -> {
-            try {
-                channel.basicPublish("", queueName, false, properties, json.toString().getBytes());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+        try {
+            channel.basicPublish("", queueName, false, properties, json.toString().getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Send a json message to the specified queue in fire-and-forget mode
+     * (is run async)
+     *
+     * @param queueName Name of the queue to publish the json to
+     * @param json      JSON to send as body of the message
+     * @param ttl       Time to live in milliseconds
+     * @see RabbitManager#fireAndForget(String, JSONObject, long)
+     */
+    public void fireAndForgetAsync(@NotNull String queueName,
+                                   @NotNull JSONObject json,
+                                   long ttl) {
+        CompletableFuture.runAsync(() -> fireAndForget(queueName, json, ttl));
     }
 
     /**
@@ -76,7 +91,7 @@ public final class RabbitManager {
      * message is received, a callback is run.
      *
      * @param queueName Name of the queue to consume messages from
-     * @param callback Callback to be run everytime a message is received
+     * @param callback  Callback to be run everytime a message is received
      */
     public void onDelivery(@NotNull String queueName, Consumer<JSONObject> callback) {
         try {
@@ -98,18 +113,18 @@ public final class RabbitManager {
      */
     public void onChannelInitialized(Runnable callback) {
         CompletableFuture.runAsync(() -> {
-            if (channel != null) {
-                callback.run();
-            } else {
-                // if channel is null, schedule the callback to be run when it is initialized
-                try {
-                    Thread.sleep(500L);
-                    onChannelInitialized(callback);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }).orTimeout(10L, TimeUnit.SECONDS)
+                    if (channel != null) {
+                        callback.run();
+                    } else {
+                        // if channel is null, schedule the callback to be run when it is initialized
+                        try {
+                            Thread.sleep(500L);
+                            onChannelInitialized(callback);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }).orTimeout(10L, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
                     Middleware.getLogger().severe("RabbitMQ channel initialization timed out!");
                     return null;

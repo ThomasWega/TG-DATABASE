@@ -12,6 +12,8 @@ import java.util.logging.Logger;
 public final class Middleware {
 
     @Getter
+    private static final Logger logger = Logger.getLogger("Middleware");
+    @Getter
     @Setter
     @Nullable
     private HikariManager hikariManager = null;
@@ -19,18 +21,13 @@ public final class Middleware {
     @Setter
     @Nullable
     private RabbitManager rabbitManager = null;
-
     @Getter
     @Setter
     @Nullable
     private JedisPool jedisPool = null;
 
-    @Getter
-    private static final Logger logger = Logger.getLogger("Middleware");
-
-
     public static void main(String[] args) {
-        // TODO add thread pooling
         // TODO when modifying level the progress resets
+        // TODO use one queue for updates, and identify with header
     }
 }

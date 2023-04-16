@@ -5,8 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.concurrent.CompletableFuture;
-
 public class RedisCache {
 
     @Nullable
@@ -23,10 +21,8 @@ public class RedisCache {
      */
     public void remove(String string) {
         if (pool == null) return;
-        CompletableFuture.runAsync(() -> {
-            try (Jedis jedis = pool.getResource()) {
-                jedis.del(string);
-            }
-        });
+        try (Jedis jedis = pool.getResource()) {
+            jedis.del(string);
+        }
     }
 }

@@ -33,7 +33,7 @@ public final class MiniMessageUtils {
      * Some tags work only for offline players or online players!
      *
      * @param playerName Name of the Player
-     * @param prefix Prefix of the player
+     * @param prefix     Prefix of the player
      * @return new MiniMessage with formatter ready
      */
     public static MiniMessage withPrefix(@NotNull String playerName,

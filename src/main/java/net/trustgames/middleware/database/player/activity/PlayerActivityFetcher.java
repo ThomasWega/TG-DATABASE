@@ -1,5 +1,6 @@
 package net.trustgames.middleware.database.player.activity;
 
+import net.trustgames.middleware.Middleware;
 import net.trustgames.middleware.managers.HikariManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,8 +33,8 @@ public final class PlayerActivityFetcher {
      * @param callback Callback where the result will be saved
      */
     public void fetchByUUID(@NotNull UUID uuid, Consumer<@Nullable PlayerActivity> callback) {
-        if (hikariManager == null){
-            callback.accept(null);
+        if (hikariManager == null) {
+            Middleware.getLogger().severe("HikariManager is not initialized");
             return;
         }
         CompletableFuture.runAsync(() -> {
@@ -64,8 +65,8 @@ public final class PlayerActivityFetcher {
      * @param callback Callback where the result will be saved
      */
     public void fetchByID(long id, Consumer<PlayerActivity.@Nullable Activity> callback) {
-        if (hikariManager == null){
-            callback.accept(null);
+        if (hikariManager == null) {
+            Middleware.getLogger().severe("HikariManager is not initialized");
             return;
         }
         CompletableFuture.runAsync(() -> {
