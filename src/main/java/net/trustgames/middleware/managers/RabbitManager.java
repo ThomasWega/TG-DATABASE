@@ -46,19 +46,25 @@ public final class RabbitManager {
     }
 
     /**
-     * Send a json message to the specified queue
+     * Send a json message to the specified queue in fire-and-forget mode
      * (is run async)
      *
      * @param queueName Name of the queue to publish the json to
      * @param json JSON to send as body of the message
+     * @param ttl Time to live in milliseconds
      */
-    public void send(String queueName, JSONObject json) {
+    public void fireAndForget(String queueName, JSONObject json, long ttl) {
         if (channel == null) {
             return;
         }
+
+        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
+                .expiration(String.valueOf(ttl))
+                .build();
+
         CompletableFuture.runAsync(() -> {
             try {
-                channel.basicPublish("", queueName, null, json.toString().getBytes());
+                channel.basicPublish("", queueName, false, properties, json.toString().getBytes());
             } catch (IOException e) {
                 e.printStackTrace();
             }

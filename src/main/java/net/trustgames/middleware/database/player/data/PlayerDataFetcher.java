@@ -138,7 +138,7 @@ public final class PlayerDataFetcher {
             // call the event from the main thread
 
             if (rabbitManager != null) {
-                rabbitManager.send(RabbitQueues.PLAYER_DATA_UPDATE_EVENT.name, new JSONObject().put("uuid", uuid));
+                rabbitManager.fireAndForget(RabbitQueues.PLAYER_DATA_UPDATE_EVENT.name, new JSONObject().put("uuid", uuid), 5000);
             }
         } catch (SQLException e) {
             try {
