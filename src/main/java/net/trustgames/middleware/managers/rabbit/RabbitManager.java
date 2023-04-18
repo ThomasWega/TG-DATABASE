@@ -122,21 +122,6 @@ public final class RabbitManager {
         }
     }
 
-    public void onDeliveryTest(Consumer<JSONObject> callback) {
-        try {
-            channel.basicConsume(RabbitQueues.EVENT_PLAYER_DATA.name, true, new DefaultConsumer(channel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
-                    String fullMessage = new String(body, StandardCharsets.UTF_8);
-                    JSONObject json = new JSONObject(fullMessage);
-                    callback.accept(json);
-                }
-            });
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 
     /**
      * @param callback When channel is initialized
