@@ -1,13 +1,13 @@
 package net.trustgames.middleware.database.player.data;
 
+import com.rabbitmq.client.AMQP;
 import net.trustgames.middleware.Middleware;
 import net.trustgames.middleware.cache.PlayerDataCache;
-import net.trustgames.middleware.config.rabbit.RabbitQueues;
 import net.trustgames.middleware.database.player.data.config.PlayerDataType;
-import net.trustgames.middleware.database.player.data.level.PlayerLevel;
 import net.trustgames.middleware.database.player.data.uuid.PlayerUUIDFetcher;
 import net.trustgames.middleware.managers.HikariManager;
-import net.trustgames.middleware.managers.RabbitManager;
+import net.trustgames.middleware.managers.rabbit.RabbitManager;
+import net.trustgames.middleware.managers.rabbit.extras.RabbitQueues;
 import net.trustgames.middleware.utils.LevelUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -60,26 +60,37 @@ public final class PlayerDataFetcher {
      * @see PlayerDataFetcher#fetch(UUID, Consumer)
      */
     public void fetch(@NotNull UUID uuid, Consumer<@Nullable String> callback) {
-        if (hikariManager == null){
+        if (hikariManager == null) {
             Middleware.getLogger().severe("HikariManager is not initialized");
             return;
         }
 
         CompletableFuture.runAsync(() -> {
+
+            /*
+            in database, only the xp is saved, that means first the XP
+            needs to be fetched and after that converted to the player's level
+             */
+            PlayerDataType dataTypeFinal;
             if (dataType == PlayerDataType.LEVEL) {
-                PlayerLevel playerLevel = new PlayerLevel(middleware, uuid);
-                playerLevel.getLevel(level -> callback.accept(String.valueOf(level)));
-                return;
+                dataTypeFinal = PlayerDataType.XP;
+            } else {
+                dataTypeFinal = dataType;
             }
 
-            String label = dataType.getColumnName();
+            String label = dataTypeFinal.getColumnName();
             try (Connection connection = hikariManager.getConnection();
                  PreparedStatement statement = connection.prepareStatement("SELECT " + label + " FROM " + tableName + " WHERE uuid = ?")) {
                 statement.setString(1, uuid.toString());
                 try (ResultSet results = statement.executeQuery()) {
                     if (results.next()) {
-                        Object object = results.getObject(label);
-                        callback.accept(object.toString());
+                        String fetchedData = results.getObject(label).toString();
+
+                        // convert the XP retrieved to LEVEL
+                        if (dataType == PlayerDataType.LEVEL) {
+                            fetchedData = String.valueOf(LevelUtils.getLevelByXp(Integer.parseInt(fetchedData)));
+                        }
+                        callback.accept(fetchedData);
                         return;
                     }
                     callback.accept(null);
@@ -138,7 +149,13 @@ public final class PlayerDataFetcher {
             // call the event from the main thread
 
             if (rabbitManager != null) {
-                rabbitManager.fireAndForget(RabbitQueues.PLAYER_DATA_UPDATE_EVENT.name, new JSONObject().put("uuid", uuid), 5000);
+                rabbitManager.fireAndForget(
+                        RabbitQueues.EVENT_PLAYER_DATA,
+                        new AMQP.BasicProperties().builder()
+                                .expiration("5000")
+                                .build(),
+                        new JSONObject().put("uuid", uuid)
+                );
             }
         } catch (SQLException e) {
             try {
