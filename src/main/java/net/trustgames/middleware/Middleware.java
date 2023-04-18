@@ -3,7 +3,7 @@ package net.trustgames.middleware;
 import lombok.Getter;
 import lombok.Setter;
 import net.trustgames.middleware.managers.HikariManager;
-import net.trustgames.middleware.managers.RabbitManager;
+import net.trustgames.middleware.managers.rabbit.RabbitManager;
 import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.JedisPool;
 
