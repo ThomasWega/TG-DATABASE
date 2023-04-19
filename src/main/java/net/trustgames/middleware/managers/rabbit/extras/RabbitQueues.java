@@ -3,7 +3,7 @@ package net.trustgames.middleware.managers.rabbit.extras;
 import org.jetbrains.annotations.Nullable;
 
 public enum RabbitQueues {
-    EVENT_PLAYER_DATA("event_player_data", "player_data", RabbitExchanges.EVENTS);
+    EVENT_PLAYER_DATA_UPDATE("event_player_data_update", "player_data_update", RabbitExchanges.EVENTS);
 
 
     public final String name;

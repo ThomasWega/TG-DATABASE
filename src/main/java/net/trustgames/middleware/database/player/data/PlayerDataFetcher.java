@@ -150,7 +150,7 @@ public final class PlayerDataFetcher {
 
             if (rabbitManager != null) {
                 rabbitManager.fireAndForget(
-                        RabbitQueues.EVENT_PLAYER_DATA,
+                        RabbitQueues.EVENT_PLAYER_DATA_UPDATE,
                         new AMQP.BasicProperties().builder()
                                 .expiration("5000")
                                 .build(),
