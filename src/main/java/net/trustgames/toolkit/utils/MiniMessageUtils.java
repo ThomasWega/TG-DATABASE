@@ -47,7 +47,7 @@ public final class MiniMessageUtils {
                         .resolver(StandardTags.defaults())
                         .resolver(TagResolver.resolver("player_name", Tag.selfClosingInserting(Component.text(
                                 playerName))))
-                        .resolver(TagResolver.resolver("prefix", Tag.selfClosingInserting(prefix)))
+                        .resolver(TagResolver.resolver("player_prefix", Tag.selfClosingInserting(prefix)))
                         .build()
                 )
                 .build();
