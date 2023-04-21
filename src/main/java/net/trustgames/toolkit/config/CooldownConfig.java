@@ -1,5 +1,8 @@
 package net.trustgames.toolkit.config;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+
 public enum CooldownConfig {
     PREFIX("<color:#2472f0>Cooldown | </color>"),
     SPAM(PREFIX.value + "<dark_gray>Please don't spam the activity!");
@@ -8,5 +11,12 @@ public enum CooldownConfig {
 
     CooldownConfig(String value) {
         this.value = value;
+    }
+
+    /**
+     * @return Formatted component message
+     */
+    public final Component getText() {
+        return MiniMessage.miniMessage().deserialize(value);
     }
 }
