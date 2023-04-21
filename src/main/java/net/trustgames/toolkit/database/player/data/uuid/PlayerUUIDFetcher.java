@@ -1,6 +1,6 @@
 package net.trustgames.toolkit.database.player.data.uuid;
 
-import net.trustgames.toolkit.Middleware;
+import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.cache.UUIDCache;
 import net.trustgames.toolkit.database.player.data.PlayerDataFetcher;
 import net.trustgames.toolkit.managers.HikariManager;
@@ -19,12 +19,12 @@ import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName
 
 public class PlayerUUIDFetcher {
 
-    private final Middleware middleware;
+    private final Toolkit toolkit;
     private final HikariManager hikariManager;
 
-    public PlayerUUIDFetcher(@NotNull Middleware middleware) {
-        this.middleware = middleware;
-        this.hikariManager = middleware.getHikariManager();
+    public PlayerUUIDFetcher(@NotNull Toolkit toolkit) {
+        this.toolkit = toolkit;
+        this.hikariManager = toolkit.getHikariManager();
     }
 
     /**
@@ -73,7 +73,7 @@ public class PlayerUUIDFetcher {
                 statement.executeUpdate();
                 connection.commit();
 
-                new UUIDCache(middleware, playerName).update(uuid);
+                new UUIDCache(toolkit, playerName).update(uuid);
                 // TODO maybe call event?
                 // call the event from the main thread
             /* core.getServer().getScheduler().runTask(core, () ->
@@ -101,7 +101,7 @@ public class PlayerUUIDFetcher {
      */
     public void fetch(@NotNull String playerName, Consumer<@Nullable UUID> callback) {
         if (hikariManager == null) {
-            Middleware.getLogger().severe("HikariManager is not initialized");
+            Toolkit.getLogger().severe("HikariManager is not initialized");
             return;
         }
         CompletableFuture.runAsync(() -> {

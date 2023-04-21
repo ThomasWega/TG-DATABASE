@@ -1,6 +1,6 @@
 package net.trustgames.toolkit.cache;
 
-import net.trustgames.toolkit.Middleware;
+import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataIntervalConfig;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.database.player.data.uuid.PlayerUUIDFetcher;
@@ -19,13 +19,13 @@ public final class UUIDCache {
 
     private static final String field = PlayerDataType.UUID.getColumnName();
     private final JedisPool pool;
-    private final Middleware middleware;
+    private final Toolkit toolkit;
     private final String playerName;
 
-    public UUIDCache(@NotNull Middleware middleware,
+    public UUIDCache(@NotNull Toolkit toolkit,
                      @NotNull String playerName) {
-        this.pool = middleware.getJedisPool();
-        this.middleware = middleware;
+        this.pool = toolkit.getJedisPool();
+        this.toolkit = toolkit;
         this.playerName = playerName;
     }
 
@@ -50,7 +50,7 @@ public final class UUIDCache {
 
         // database
         if (uuidString == null) {
-            PlayerUUIDFetcher uuidFetcher = new PlayerUUIDFetcher(middleware);
+            PlayerUUIDFetcher uuidFetcher = new PlayerUUIDFetcher(toolkit);
             uuidFetcher.fetch(playerName, uuid -> {
                 // if still null, there is no data on the player even in the database
                 if (uuid != null)

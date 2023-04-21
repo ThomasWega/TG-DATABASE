@@ -2,7 +2,7 @@ package net.trustgames.toolkit.managers;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import net.trustgames.toolkit.Middleware;
+import net.trustgames.toolkit.Toolkit;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  */
 public final class HikariManager {
 
-    private static final Logger logger = Middleware.getLogger();
+    private static final Logger logger = Toolkit.getLogger();
     private static HikariDataSource dataSource;
 
     /**
@@ -72,7 +72,7 @@ public final class HikariManager {
                     }
                 }).orTimeout(10L, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
-                    Middleware.getLogger().severe("HikariCP data source initialization timed out!");
+                    Toolkit.getLogger().severe("HikariCP data source initialization timed out!");
                     return null;
                 });
     }

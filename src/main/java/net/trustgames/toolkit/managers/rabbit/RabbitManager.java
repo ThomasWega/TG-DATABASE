@@ -2,7 +2,7 @@ package net.trustgames.toolkit.managers.rabbit;
 
 import com.rabbitmq.client.*;
 import lombok.Getter;
-import net.trustgames.toolkit.Middleware;
+import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.managers.rabbit.extras.RabbitExchanges;
 import net.trustgames.toolkit.managers.rabbit.extras.RabbitQueues;
 import org.jetbrains.annotations.NotNull;
@@ -141,7 +141,7 @@ public final class RabbitManager {
                     }
                 }).orTimeout(10L, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
-                    Middleware.getLogger().severe("RabbitMQ channel initialization timed out!");
+                    Toolkit.getLogger().severe("RabbitMQ channel initialization timed out!");
                     return null;
                 });
     }

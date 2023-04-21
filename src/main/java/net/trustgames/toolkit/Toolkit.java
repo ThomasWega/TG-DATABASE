@@ -9,10 +9,10 @@ import redis.clients.jedis.JedisPool;
 
 import java.util.logging.Logger;
 
-public final class Middleware {
+public final class Toolkit {
 
     @Getter
-    private static final Logger logger = Logger.getLogger("Middleware");
+    private static final Logger logger = Logger.getLogger("Toolkit");
     @Getter
     @Setter
     @Nullable

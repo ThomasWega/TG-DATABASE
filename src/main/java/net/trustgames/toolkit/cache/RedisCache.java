@@ -1,6 +1,6 @@
 package net.trustgames.toolkit.cache;
 
-import net.trustgames.toolkit.Middleware;
+import net.trustgames.toolkit.Toolkit;
 import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -10,8 +10,8 @@ public class RedisCache {
     @Nullable
     private final JedisPool pool;
 
-    public RedisCache(Middleware middleware) {
-        this.pool = middleware.getJedisPool();
+    public RedisCache(Toolkit toolkit) {
+        this.pool = toolkit.getJedisPool();
     }
 
     /**

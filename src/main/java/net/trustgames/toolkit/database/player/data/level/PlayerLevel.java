@@ -1,6 +1,6 @@
 package net.trustgames.toolkit.database.player.data.level;
 
-import net.trustgames.toolkit.Middleware;
+import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.cache.PlayerDataCache;
 import net.trustgames.toolkit.database.player.data.PlayerDataFetcher;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
@@ -20,11 +20,11 @@ public final class PlayerLevel {
     private final PlayerDataCache dataCache;
     private final UUID uuid;
 
-    public PlayerLevel(@NotNull Middleware middleware,
+    public PlayerLevel(@NotNull Toolkit toolkit,
                        @NotNull UUID uuid) {
         this.uuid = uuid;
-        this.dataFetcher = new PlayerDataFetcher(middleware, PlayerDataType.XP);
-        this.dataCache = new PlayerDataCache(middleware, uuid, PlayerDataType.XP);
+        this.dataFetcher = new PlayerDataFetcher(toolkit, PlayerDataType.XP);
+        this.dataCache = new PlayerDataCache(toolkit, uuid, PlayerDataType.XP);
     }
 
     /**

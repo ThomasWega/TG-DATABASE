@@ -1,7 +1,7 @@
 package net.trustgames.toolkit.database.player.data;
 
 
-import net.trustgames.toolkit.Middleware;
+import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.cache.UUIDCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +12,7 @@ public final class PlayerData {
     private final PlayerDataFetcher dataFetcher;
     private final UUID uuid;
 
-    public PlayerData(@NotNull Middleware middleware,
+    public PlayerData(@NotNull Toolkit toolkit,
                       @NotNull UUID uuid,
                       @NotNull PlayerDataType dataType) {
         if (dataType == PlayerDataType.UUID) {
@@ -20,7 +20,7 @@ public final class PlayerData {
                     "Use the " + UUIDCache.class.getName() + " instead!");
         }
         this.uuid = uuid;
-        this.dataFetcher = new PlayerDataFetcher(middleware, dataType);
+        this.dataFetcher = new PlayerDataFetcher(toolkit, dataType);
     }
 
     /**

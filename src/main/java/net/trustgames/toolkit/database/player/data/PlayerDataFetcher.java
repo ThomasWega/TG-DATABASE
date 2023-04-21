@@ -1,7 +1,7 @@
 package net.trustgames.toolkit.database.player.data;
 
 import com.rabbitmq.client.AMQP;
-import net.trustgames.toolkit.Middleware;
+import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.cache.PlayerDataCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.database.player.data.uuid.PlayerUUIDFetcher;
@@ -29,7 +29,7 @@ import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName
  */
 public final class PlayerDataFetcher {
 
-    private final Middleware middleware;
+    private final Toolkit toolkit;
     @Nullable
     private final HikariManager hikariManager;
     @Nullable
@@ -37,11 +37,11 @@ public final class PlayerDataFetcher {
     private PlayerDataType dataType;
 
 
-    public PlayerDataFetcher(@NotNull Middleware middleware,
+    public PlayerDataFetcher(@NotNull Toolkit toolkit,
                              @NotNull PlayerDataType dataType) {
-        this.middleware = middleware;
-        this.hikariManager = middleware.getHikariManager();
-        this.rabbitManager = middleware.getRabbitManager();
+        this.toolkit = toolkit;
+        this.hikariManager = toolkit.getHikariManager();
+        this.rabbitManager = toolkit.getRabbitManager();
         this.dataType = dataType;
 
         if (dataType == PlayerDataType.UUID) {
@@ -61,7 +61,7 @@ public final class PlayerDataFetcher {
      */
     public void fetch(@NotNull UUID uuid, Consumer<@Nullable String> callback) {
         if (hikariManager == null) {
-            Middleware.getLogger().severe("HikariManager is not initialized");
+            Toolkit.getLogger().severe("HikariManager is not initialized");
             return;
         }
 
@@ -111,20 +111,20 @@ public final class PlayerDataFetcher {
      */
     public void update(@NotNull UUID uuid, @NotNull Object object) {
         if (hikariManager == null) {
-            Middleware.getLogger().severe("HikariManager is not initialized");
+            Toolkit.getLogger().severe("HikariManager is not initialized");
             return;
         }
 
         // if XP, the level also needs to be recalculated and updated
         if (dataType == PlayerDataType.XP) {
             int level = LevelUtils.getLevelByXp(Integer.parseInt(object.toString()));
-            PlayerDataCache levelCache = new PlayerDataCache(middleware, uuid, PlayerDataType.LEVEL);
+            PlayerDataCache levelCache = new PlayerDataCache(toolkit, uuid, PlayerDataType.LEVEL);
             levelCache.update(String.valueOf(level));
         }
 
         // if LEVEL, it needs to be recalculated to XP and updated in the cache
         if (dataType == PlayerDataType.LEVEL) {
-            PlayerDataCache levelCache = new PlayerDataCache(middleware, uuid, PlayerDataType.LEVEL);
+            PlayerDataCache levelCache = new PlayerDataCache(toolkit, uuid, PlayerDataType.LEVEL);
             levelCache.update(object.toString());
             object = LevelUtils.getThreshold(Integer.parseInt(object.toString()));
             dataType = PlayerDataType.XP;
@@ -143,7 +143,7 @@ public final class PlayerDataFetcher {
             connection.commit();
 
             // update the cache
-            PlayerDataCache playerDataCache = new PlayerDataCache(middleware, uuid, dataType);
+            PlayerDataCache playerDataCache = new PlayerDataCache(toolkit, uuid, dataType);
             playerDataCache.update(object.toString());
 
             // call the event from the main thread
