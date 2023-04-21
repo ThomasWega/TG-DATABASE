@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 public enum ChatConfig {
     PREFIX("<color:#00adc4>Chat | </color>"),
-    COLOR("&f"),
+    CHAT_COLOR("&f"),
     NAME_COLOR("&e"),
     ALLOW_COLORS_PERM(PermissionConfig.KNIGHT.permission),
     MENTION_COLOR("&a"),
