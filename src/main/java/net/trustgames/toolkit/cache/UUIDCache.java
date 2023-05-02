@@ -4,11 +4,12 @@ import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataIntervalConfig;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.database.player.data.uuid.PlayerUUIDFetcher;
+import net.trustgames.toolkit.utils.UUIDUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -37,7 +38,7 @@ public final class UUIDCache {
      *
      * @param callback Where the UUID of the player, or null will be saved
      */
-    public void get(Consumer<@Nullable UUID> callback) {
+    public void get(Consumer<Optional<UUID>> callback) {
         String uuidString = null;
 
         // cache
@@ -53,14 +54,16 @@ public final class UUIDCache {
             PlayerUUIDFetcher uuidFetcher = new PlayerUUIDFetcher(toolkit);
             uuidFetcher.fetch(playerName, uuid -> {
                 // if still null, there is no data on the player even in the database
-                if (uuid != null)
-                    update(uuid);
-
+                uuid.ifPresent(this::update);
                 callback.accept(uuid);
             });
-            return;
+        } else {
+            if (UUIDUtils.isValidUUID(uuidString)) {
+                callback.accept(Optional.of(UUID.fromString(uuidString)));
+            } else {
+                callback.accept(Optional.empty());
+            }
         }
-        callback.accept(UUID.fromString(uuidString));
     }
 
     /**

@@ -1,7 +1,7 @@
 package net.trustgames.toolkit.database.player.activity;
 
 import net.trustgames.toolkit.managers.HikariManager;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is used to handle the database table for player activity
@@ -13,7 +13,7 @@ public final class PlayerActivityDB {
 
     private final HikariManager hikariManager;
 
-    public PlayerActivityDB(@Nullable HikariManager hikariManager) {
+    public PlayerActivityDB(@NotNull HikariManager hikariManager) {
         this.hikariManager = hikariManager;
         initializeTable();
     }

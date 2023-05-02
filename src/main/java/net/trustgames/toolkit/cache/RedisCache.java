@@ -17,12 +17,12 @@ public class RedisCache {
     /**
      * Removes all the data associated with the specified key
      *
-     * @param string Name of the key
+     * @param key Name of the key
      */
-    public void remove(String string) {
+    public void removeKey(String key) {
         if (pool == null) return;
         try (Jedis jedis = pool.getResource()) {
-            jedis.del(string);
+            jedis.del(key);
         }
     }
 }

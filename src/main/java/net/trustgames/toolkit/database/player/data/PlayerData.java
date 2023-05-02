@@ -30,8 +30,9 @@ public final class PlayerData {
      */
     public void addData(int increase) {
         dataFetcher.fetch(uuid, data -> {
-            if (data == null) return;
-            int intData = Integer.parseInt(data);
+            if (data.isEmpty()) return;
+
+            int intData = Integer.parseInt(data.get());
             intData += increase;
             dataFetcher.update(uuid, intData);
         });
@@ -52,8 +53,9 @@ public final class PlayerData {
      */
     public void removeData(int decrease) {
         dataFetcher.fetch(uuid, data -> {
-            if (data == null) return;
-            int intData = Integer.parseInt(data);
+            if (data.isEmpty()) return;
+
+            int intData = Integer.parseInt(data.get());
             if (decrease >= intData) {
                 setData(0);
                 return;

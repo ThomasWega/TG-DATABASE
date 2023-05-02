@@ -1,12 +1,12 @@
 package net.trustgames.toolkit.database.player.activity;
 
-import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.managers.HikariManager;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -20,7 +20,7 @@ public final class PlayerActivityFetcher {
 
     private final HikariManager hikariManager;
 
-    public PlayerActivityFetcher(@Nullable HikariManager hikariManager) {
+    public PlayerActivityFetcher(@NotNull HikariManager hikariManager) {
         this.hikariManager = hikariManager;
     }
 
@@ -32,28 +32,26 @@ public final class PlayerActivityFetcher {
      * @param uuid     UUID of Player to get the activity for
      * @param callback Callback where the result will be saved
      */
-    public void fetchByUUID(@NotNull UUID uuid, Consumer<@Nullable PlayerActivity> callback) {
-        if (hikariManager == null) {
-            Toolkit.getLogger().severe("HikariManager is not initialized");
-            return;
-        }
+    public void fetchByUUID(@NotNull UUID uuid, Consumer<Optional<PlayerActivity>> callback) {
         CompletableFuture.runAsync(() -> {
             try (Connection connection = hikariManager.getConnection();
                  PreparedStatement statement = connection.prepareStatement("SELECT * FROM " + tableName + " WHERE uuid = ? ORDER BY id DESC")) {
                 statement.setString(1, uuid.toString());
                 try (ResultSet results = statement.executeQuery()) {
-                    PlayerActivity activity = new PlayerActivity(uuid, new ArrayList<>());
+                    List<PlayerActivity.Activity> activities = new ArrayList<>();
                     while (results.next()) {
                         long id = results.getLong("id");
                         String ip = results.getString("ip");
                         String action = results.getString("action");
                         Timestamp time = results.getTimestamp("time");
-                        activity.add(id, ip, action, time);
+                        activities.add(new PlayerActivity.Activity(id, uuid, ip, action, time));
                     }
-                    callback.accept(activity);
+                    callback.accept(activities.isEmpty()
+                            ? Optional.empty()
+                            : Optional.of(new PlayerActivity(uuid, activities)));
                 }
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("While fetching Activity of UUID " + uuid + " from the database", e);
             }
         });
     }
@@ -64,11 +62,7 @@ public final class PlayerActivityFetcher {
      * @param id       Given ID
      * @param callback Callback where the result will be saved
      */
-    public void fetchByID(long id, Consumer<PlayerActivity.@Nullable Activity> callback) {
-        if (hikariManager == null) {
-            Toolkit.getLogger().severe("HikariManager is not initialized");
-            return;
-        }
+    public void fetchByID(long id, Consumer<Optional<PlayerActivity.Activity>> callback) {
         CompletableFuture.runAsync(() -> {
             try (Connection conn = hikariManager.getConnection();
                  PreparedStatement statement = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE id = ?")) {
@@ -81,8 +75,10 @@ public final class PlayerActivityFetcher {
                         String action = results.getString("action");
                         Timestamp time = results.getTimestamp("time");
                         PlayerActivity.Activity activity = new PlayerActivity.Activity(resultId, uuid, ip, action, time);
-                        callback.accept(activity);
+                        callback.accept(Optional.of(activity));
+                        return;
                     }
+                    callback.accept(Optional.empty());
                 }
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -98,7 +94,6 @@ public final class PlayerActivityFetcher {
      * @param activity Only one Activity with the corresponding data
      */
     public void insertNew(PlayerActivity.@NotNull Activity activity) {
-        if (hikariManager == null) return;
         try (Connection connection = hikariManager.getConnection()) {
             String query = "INSERT INTO " + tableName + " (uuid, ip, action, time) VALUES (?, ?, ?, ?)";
             try (PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {

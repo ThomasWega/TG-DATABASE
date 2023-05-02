@@ -1,16 +1,20 @@
 package net.trustgames.toolkit.database.player.data.uuid;
 
+import com.rabbitmq.client.AMQP;
 import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.cache.UUIDCache;
 import net.trustgames.toolkit.database.player.data.PlayerDataFetcher;
 import net.trustgames.toolkit.managers.HikariManager;
+import net.trustgames.toolkit.managers.rabbit.extras.RabbitQueues;
+import net.trustgames.toolkit.utils.UUIDUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -74,11 +78,14 @@ public class PlayerUUIDFetcher {
                 connection.commit();
 
                 new UUIDCache(toolkit, playerName).update(uuid);
-                // TODO maybe call event?
-                // call the event from the main thread
-            /* core.getServer().getScheduler().runTask(core, () ->
-                    Bukkit.getPluginManager().callEvent(new PlayerDataUpdateEvent(uuid)));
-             */
+                // call an event
+                toolkit.getRabbitManager().fireAndForget(
+                        RabbitQueues.EVENT_PLAYER_DATA_UPDATE,
+                        new AMQP.BasicProperties().builder()
+                                .expiration("5000")
+                                .build(),
+                        new JSONObject().put("uuid", uuid)
+                );
             } catch (SQLException e) {
                 try {
                     connection.rollback();
@@ -99,11 +106,7 @@ public class PlayerUUIDFetcher {
      * @implNote Can't fetch anything other that Player's UUID!
      * @see PlayerDataFetcher#fetch(UUID, Consumer)
      */
-    public void fetch(@NotNull String playerName, Consumer<@Nullable UUID> callback) {
-        if (hikariManager == null) {
-            Toolkit.getLogger().severe("HikariManager is not initialized");
-            return;
-        }
+    public void fetch(@NotNull String playerName, Consumer<Optional<UUID>> callback) {
         CompletableFuture.runAsync(() -> {
             try (Connection connection = hikariManager.getConnection();
                  PreparedStatement statement = connection.prepareStatement("SELECT uuid FROM " + tableName + " WHERE name = ?")) {
@@ -112,13 +115,17 @@ public class PlayerUUIDFetcher {
                 if (result.next()) {
                     String stringUuid = result.getString("uuid");
                     try {
-                        callback.accept(UUID.fromString(stringUuid));
+                        if (UUIDUtils.isValidUUID(stringUuid)){
+                            callback.accept(Optional.of(UUID.fromString(stringUuid)));
+                        } else {
+                            callback.accept(Optional.empty());
+                        }
                         return;
                     } catch (IllegalArgumentException e) {
                         throw new RuntimeException("INVALID UUID FOR: " + stringUuid, e);
                     }
                 }
-                callback.accept(null);
+                callback.accept(Optional.empty());
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }

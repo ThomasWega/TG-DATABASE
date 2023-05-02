@@ -15,11 +15,9 @@ public final class Toolkit {
     private static final Logger logger = Logger.getLogger("Toolkit");
     @Getter
     @Setter
-    @Nullable
     private HikariManager hikariManager = null;
     @Getter
     @Setter
-    @Nullable
     private RabbitManager rabbitManager = null;
     @Getter
     @Setter
@@ -27,7 +25,22 @@ public final class Toolkit {
     private JedisPool jedisPool = null;
 
     public static void main(String[] args) {
+        // TODO make events queue for each type of data -- update events firing
         // TODO when modifying level the progress resets
         // TODO use optional for fetching data
+    }
+
+    /**
+     * Closes all connections that Toolkit instance uses
+     */
+    public void closeConnections() {
+        if (hikariManager.isDataSourceInitialized())
+            hikariManager.close();
+
+        if (rabbitManager.isChannelInitialized())
+            rabbitManager.close();
+
+        if (jedisPool != null)
+            jedisPool.close();
     }
 }

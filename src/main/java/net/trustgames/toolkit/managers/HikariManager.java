@@ -78,6 +78,15 @@ public final class HikariManager {
     }
 
     /**
+     * @return
+     * true - if datasource is initialized<p>
+     * false - if datasource is not initialized
+     */
+    public boolean isDataSourceInitialized() {
+        return dataSource != null;
+    }
+
+    /**
      * checks if the table exists, if it doesn't, it creates one using the given SQL statement
      * (is run async)
      *

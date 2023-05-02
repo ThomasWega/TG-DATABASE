@@ -10,13 +10,13 @@ import net.trustgames.toolkit.managers.rabbit.RabbitManager;
 import net.trustgames.toolkit.managers.rabbit.extras.RabbitQueues;
 import net.trustgames.toolkit.utils.LevelUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -30,9 +30,7 @@ import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName
 public final class PlayerDataFetcher {
 
     private final Toolkit toolkit;
-    @Nullable
     private final HikariManager hikariManager;
-    @Nullable
     private final RabbitManager rabbitManager;
     private PlayerDataType dataType;
 
@@ -53,18 +51,13 @@ public final class PlayerDataFetcher {
     /**
      * Get the player data Object from the column "label" that corresponds
      * to the given uuid. This whole operation is run async, and the result is saved
-     * in the callback. If no result is found, int "0" is returned
+     * in the callback.
      *
      * @param callback Callback where the result will be saved
      * @implNote Can't fetch player's UUID!
      * @see PlayerDataFetcher#fetch(UUID, Consumer)
      */
-    public void fetch(@NotNull UUID uuid, Consumer<@Nullable String> callback) {
-        if (hikariManager == null) {
-            Toolkit.getLogger().severe("HikariManager is not initialized");
-            return;
-        }
-
+    public void fetch(@NotNull UUID uuid, Consumer<Optional<String>> callback) {
         CompletableFuture.runAsync(() -> {
 
             /*
@@ -90,10 +83,10 @@ public final class PlayerDataFetcher {
                         if (dataType == PlayerDataType.LEVEL) {
                             fetchedData = String.valueOf(LevelUtils.getLevelByXp(Integer.parseInt(fetchedData)));
                         }
-                        callback.accept(fetchedData);
+                        callback.accept(Optional.of(fetchedData));
                         return;
                     }
-                    callback.accept(null);
+                    callback.accept(Optional.empty());
                 }
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -110,11 +103,6 @@ public final class PlayerDataFetcher {
      * @param object Object to update the DataType with
      */
     public void update(@NotNull UUID uuid, @NotNull Object object) {
-        if (hikariManager == null) {
-            Toolkit.getLogger().severe("HikariManager is not initialized");
-            return;
-        }
-
         // if XP, the level also needs to be recalculated and updated
         if (dataType == PlayerDataType.XP) {
             int level = LevelUtils.getLevelByXp(Integer.parseInt(object.toString()));
@@ -148,15 +136,13 @@ public final class PlayerDataFetcher {
 
             // call the event from the main thread
 
-            if (rabbitManager != null) {
-                rabbitManager.fireAndForget(
-                        RabbitQueues.EVENT_PLAYER_DATA_UPDATE,
-                        new AMQP.BasicProperties().builder()
-                                .expiration("5000")
-                                .build(),
-                        new JSONObject().put("uuid", uuid)
-                );
-            }
+            rabbitManager.fireAndForget(
+                    RabbitQueues.EVENT_PLAYER_DATA_UPDATE,
+                    new AMQP.BasicProperties().builder()
+                            .expiration("5000")
+                            .build(),
+                    new JSONObject().put("uuid", uuid)
+            );
         } catch (SQLException e) {
             try {
                 connection.rollback();

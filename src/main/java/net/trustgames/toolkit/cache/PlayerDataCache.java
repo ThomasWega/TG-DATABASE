@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -17,6 +18,7 @@ import java.util.function.Consumer;
  */
 public final class PlayerDataCache {
 
+    @Nullable
     private final JedisPool pool;
     private final Toolkit toolkit;
     private final UUID uuid;
@@ -55,7 +57,7 @@ public final class PlayerDataCache {
      *
      * @param callback Callback where the result is saved
      */
-    public void get(Consumer<@Nullable String> callback) {
+    public void get(Consumer<Optional<String>> callback) {
         String result = null;
 
         // cache
@@ -71,12 +73,11 @@ public final class PlayerDataCache {
             PlayerDataFetcher dataFetcher = new PlayerDataFetcher(toolkit, dataType);
             dataFetcher.fetch(uuid, data -> {
                 // if still null, there is no data on the player even in the database
-                if (data != null)
-                    update(data);
+                data.ifPresent(this::update);
                 callback.accept(data);
             });
-            return;
+        } else {
+            callback.accept(Optional.of(result));
         }
-        callback.accept(result);
     }
 }
