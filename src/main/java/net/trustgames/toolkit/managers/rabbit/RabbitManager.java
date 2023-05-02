@@ -18,10 +18,10 @@ import java.util.function.Consumer;
 public final class RabbitManager {
 
     private ConnectionFactory factory;
-    private Connection connection;
+    private final Connection connection;
 
     @Getter
-    private Channel channel;
+    private final Channel channel;
 
     /**
      * Sets parameters and creates new channel and queue.
@@ -39,18 +39,40 @@ public final class RabbitManager {
         try {
             this.connection = factory.newConnection();
             this.channel = connection.createChannel();
-            for (RabbitExchanges exchange : RabbitExchanges.values()) {
+            declareExchanges();
+            declarePlayerDataUpdateQueues();
+        } catch (IOException | TimeoutException e) {
+            throw new RuntimeException("Failed to declare Channels or Exchanges in RabbitMQ", e);
+        }
+    }
+
+    /**
+     * @see RabbitExchanges
+     */
+    private void declareExchanges() {
+        for (RabbitExchanges exchange : RabbitExchanges.values()) {
+            try {
                 channel.exchangeDeclare(exchange.name, exchange.type, true);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to declare Exchanges in RabbitMQ", e);
             }
+        }
+    }
+
+    /**
+     * @see PlayerDataUpdateQueues
+     */
+    private void declarePlayerDataUpdateQueues() {
+        try {
             for (PlayerDataUpdateQueues queue : PlayerDataUpdateQueues.values()) {
                 channel.queueDeclare(queue.name, false, false, false, null);
-                for (RabbitExchanges exchange : queue.exchanges){
+                for (RabbitExchanges exchange : queue.exchanges) {
                     if (exchange == null) return;
                     channel.queueBind(queue.name, exchange.name, queue.routingKey);
                 }
             }
-        } catch (IOException | TimeoutException e) {
-            e.printStackTrace();
+        } catch (IOException  e) {
+            throw new RuntimeException("Failed to declare Channels or Exchanges for PlayerDataUpdate in RabbitMQ", e);
         }
     }
 
