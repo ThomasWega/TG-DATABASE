@@ -1,9 +1,9 @@
-package net.trustgames.toolkit.managers.rabbit.extras;
+package net.trustgames.toolkit.managers.rabbit.extras.exchanges;
 
 import com.rabbitmq.client.BuiltinExchangeType;
 
 public enum RabbitExchanges {
-    EVENTS("events", BuiltinExchangeType.DIRECT);
+    EVENTS("events", BuiltinExchangeType.TOPIC);
 
 
     public final String name;

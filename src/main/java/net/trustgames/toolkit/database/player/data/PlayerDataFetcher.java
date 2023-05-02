@@ -7,7 +7,7 @@ import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.database.player.data.uuid.PlayerUUIDFetcher;
 import net.trustgames.toolkit.managers.HikariManager;
 import net.trustgames.toolkit.managers.rabbit.RabbitManager;
-import net.trustgames.toolkit.managers.rabbit.extras.RabbitQueues;
+import net.trustgames.toolkit.managers.rabbit.extras.queues.PlayerDataUpdateQueues;
 import net.trustgames.toolkit.utils.LevelUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -137,7 +137,7 @@ public final class PlayerDataFetcher {
             // call the event from the main thread
 
             rabbitManager.fireAndForget(
-                    RabbitQueues.EVENT_PLAYER_DATA_UPDATE,
+                    PlayerDataUpdateQueues.queueOf(dataType),
                     new AMQP.BasicProperties().builder()
                             .expiration("5000")
                             .build(),

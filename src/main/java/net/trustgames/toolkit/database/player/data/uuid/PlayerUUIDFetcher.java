@@ -4,8 +4,9 @@ import com.rabbitmq.client.AMQP;
 import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.cache.UUIDCache;
 import net.trustgames.toolkit.database.player.data.PlayerDataFetcher;
+import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.managers.HikariManager;
-import net.trustgames.toolkit.managers.rabbit.extras.RabbitQueues;
+import net.trustgames.toolkit.managers.rabbit.extras.queues.PlayerDataUpdateQueues;
 import net.trustgames.toolkit.utils.UUIDUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -80,7 +81,7 @@ public class PlayerUUIDFetcher {
                 new UUIDCache(toolkit, playerName).update(uuid);
                 // call an event
                 toolkit.getRabbitManager().fireAndForget(
-                        RabbitQueues.EVENT_PLAYER_DATA_UPDATE,
+                        PlayerDataUpdateQueues.queueOf(PlayerDataType.UUID),
                         new AMQP.BasicProperties().builder()
                                 .expiration("5000")
                                 .build(),

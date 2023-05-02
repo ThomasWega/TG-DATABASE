@@ -2,8 +2,8 @@ package net.trustgames.toolkit.managers.rabbit;
 
 import com.rabbitmq.client.*;
 import lombok.Getter;
-import net.trustgames.toolkit.managers.rabbit.extras.RabbitExchanges;
-import net.trustgames.toolkit.managers.rabbit.extras.RabbitQueues;
+import net.trustgames.toolkit.managers.rabbit.extras.exchanges.RabbitExchanges;
+import net.trustgames.toolkit.managers.rabbit.extras.queues.PlayerDataUpdateQueues;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -42,7 +42,7 @@ public final class RabbitManager {
             for (RabbitExchanges exchange : RabbitExchanges.values()) {
                 channel.exchangeDeclare(exchange.name, exchange.type, true);
             }
-            for (RabbitQueues queue : RabbitQueues.values()) {
+            for (PlayerDataUpdateQueues queue : PlayerDataUpdateQueues.values()) {
                 channel.queueDeclare(queue.name, false, false, false, null);
                 for (RabbitExchanges exchange : queue.exchanges){
                     if (exchange == null) return;
@@ -62,9 +62,9 @@ public final class RabbitManager {
      * @param properties Properties of the message (type, ttl, ...)
      * @param json      JSON to send as body of the message
 
-     * @see RabbitManager#fireAndForgetAsync(RabbitQueues, AMQP.BasicProperties, JSONObject)
+     * @see RabbitManager#fireAndForgetAsync(PlayerDataUpdateQueues, AMQP.BasicProperties, JSONObject)
      */
-    public void fireAndForget(@NotNull RabbitQueues queue,
+    public void fireAndForget(@NotNull PlayerDataUpdateQueues queue,
                               @Nullable AMQP.BasicProperties properties,
                               @NotNull JSONObject json) {
 
@@ -89,9 +89,9 @@ public final class RabbitManager {
      * @param queue The queue to send the message to. Contains data about the exchanges, names, types
      * @param properties Properties of the message (type, ttl, ...)
      * @param json      JSON to send as body of the message
-     * @see RabbitManager#fireAndForget(RabbitQueues, AMQP.BasicProperties, JSONObject)
+     * @see RabbitManager#fireAndForget(PlayerDataUpdateQueues, AMQP.BasicProperties, JSONObject)
      */
-    public void fireAndForgetAsync(@NotNull RabbitQueues queue,
+    public void fireAndForgetAsync(@NotNull PlayerDataUpdateQueues queue,
                                    @NotNull AMQP.BasicProperties properties,
                                    @NotNull JSONObject json) {
         CompletableFuture.runAsync(() -> fireAndForget(queue, properties, json));
