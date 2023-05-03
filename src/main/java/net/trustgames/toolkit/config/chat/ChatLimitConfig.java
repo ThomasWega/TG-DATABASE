@@ -1,5 +1,7 @@
 package net.trustgames.toolkit.config.chat;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -10,8 +12,10 @@ public enum ChatLimitConfig {
     PRIME(10d, 60d),
     DEFAULT(15d, 120d);
 
-    public final double chatLimitSec;
-    public final double chatLimitSameSec;
+    @Getter
+    private final double chatLimitSec;
+    @Getter
+    private final double chatLimitSameSec;
 
     ChatLimitConfig(double chatLimitSec, double chatLimitSameSec) {
         this.chatLimitSec = chatLimitSec;

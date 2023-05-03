@@ -1,5 +1,6 @@
 package net.trustgames.toolkit.config.chat;
 
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.trustgames.toolkit.config.PermissionConfig;
@@ -10,13 +11,14 @@ public enum ChatConfig {
     PREFIX("<color:#00adc4>Chat | </color>"),
     CHAT_COLOR("&f"),
     NAME_COLOR("&e"),
-    ALLOW_COLORS_PERM(PermissionConfig.KNIGHT.permission),
+    ALLOW_COLORS_PERM(PermissionConfig.KNIGHT.getPermission()),
     MENTION_COLOR("&a"),
     ON_COOLDOWN(PREFIX.value + "<dark_gray>Wait another <component> seconds before using chat again!"),
     ON_SAME_COOLDOWN(PREFIX.value + "<dark_gray>Don't write the same message twice! (wait <component> seconds)"),
     MENTION_ACTIONBAR("<gray><player_name> mentioned you");
 
-    public final String value;
+    @Getter
+    private final String value;
 
     ChatConfig(String value) {
         this.value = value;
@@ -25,7 +27,7 @@ public enum ChatConfig {
     /**
      * @return Formatted component message
      */
-    public final Component getText() {
+    public final Component getFormatted() {
         return MiniMessage.miniMessage().deserialize(value);
     }
 

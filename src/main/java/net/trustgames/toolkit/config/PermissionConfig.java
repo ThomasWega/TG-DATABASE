@@ -1,5 +1,7 @@
 package net.trustgames.toolkit.config;
 
+import lombok.Getter;
+
 public enum PermissionConfig {
     ADMIN("tg.admin"),
     STAFF("tg.staff"),
@@ -9,7 +11,8 @@ public enum PermissionConfig {
     PRIME("tg.prime"),
     DEFAULT("tg.default");
 
-    public final String permission;
+    @Getter
+    private final String permission;
 
     PermissionConfig(String permission) {
         this.permission = permission;

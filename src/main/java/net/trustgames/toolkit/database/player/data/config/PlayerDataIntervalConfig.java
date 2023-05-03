@@ -4,7 +4,7 @@ public enum PlayerDataIntervalConfig {
     UPDATE(5000),
     DATA_EXPIRY(3600);
 
-    // values are in milliseconds!
+    // values are in milliseconds
 
     private final long value;
 

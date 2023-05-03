@@ -24,7 +24,7 @@ public enum CommandConfig {
     COMMAND_NO_ID_DATA(PREFIX_DB.value + "<dark_gray>No data for ID <white><component>");
 
 
-    public final Object value;
+    private final Object value;
 
 
     CommandConfig(Object value) {

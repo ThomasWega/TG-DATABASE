@@ -1,16 +1,14 @@
 package net.trustgames.toolkit.database.player.data;
 
-import com.rabbitmq.client.AMQP;
 import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.cache.PlayerDataCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
+import net.trustgames.toolkit.database.player.data.event.PlayerDataUpdateEvent;
 import net.trustgames.toolkit.database.player.data.uuid.PlayerUUIDFetcher;
 import net.trustgames.toolkit.managers.HikariManager;
 import net.trustgames.toolkit.managers.rabbit.RabbitManager;
-import net.trustgames.toolkit.managers.rabbit.extras.queues.PlayerDataUpdateQueues;
 import net.trustgames.toolkit.utils.LevelUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -134,15 +132,7 @@ public final class PlayerDataFetcher {
             PlayerDataCache playerDataCache = new PlayerDataCache(toolkit, uuid, dataType);
             playerDataCache.update(object.toString());
 
-            // call the event from the main thread
-
-            rabbitManager.fireAndForget(
-                    PlayerDataUpdateQueues.queueOf(dataType),
-                    new AMQP.BasicProperties().builder()
-                            .expiration("5000")
-                            .build(),
-                    new JSONObject().put("uuid", uuid)
-            );
+            new PlayerDataUpdateEvent(rabbitManager, uuid, dataType);
         } catch (SQLException e) {
             try {
                 connection.rollback();

@@ -2,8 +2,8 @@ package net.trustgames.toolkit.managers.rabbit;
 
 import com.rabbitmq.client.*;
 import lombok.Getter;
-import net.trustgames.toolkit.managers.rabbit.extras.exchanges.RabbitExchanges;
-import net.trustgames.toolkit.managers.rabbit.extras.queues.PlayerDataUpdateQueues;
+import net.trustgames.toolkit.managers.rabbit.config.RabbitExchanges;
+import net.trustgames.toolkit.managers.rabbit.config.RabbitQueues;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -40,7 +40,7 @@ public final class RabbitManager {
             this.connection = factory.newConnection();
             this.channel = connection.createChannel();
             declareExchanges();
-            declarePlayerDataUpdateQueues();
+            declareQueues();
         } catch (IOException | TimeoutException e) {
             throw new RuntimeException("Failed to declare Channels or Exchanges in RabbitMQ", e);
         }
@@ -52,7 +52,7 @@ public final class RabbitManager {
     private void declareExchanges() {
         for (RabbitExchanges exchange : RabbitExchanges.values()) {
             try {
-                channel.exchangeDeclare(exchange.name, exchange.type, true);
+                channel.exchangeDeclare(exchange.getName(), exchange.getType(), true);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to declare Exchanges in RabbitMQ", e);
             }
@@ -60,19 +60,19 @@ public final class RabbitManager {
     }
 
     /**
-     * @see PlayerDataUpdateQueues
+     * @see RabbitQueues
      */
-    private void declarePlayerDataUpdateQueues() {
+    private void declareQueues() {
         try {
-            for (PlayerDataUpdateQueues queue : PlayerDataUpdateQueues.values()) {
-                channel.queueDeclare(queue.name, false, false, false, null);
+            for (RabbitQueues queue : RabbitQueues.values()) {
+                channel.queueDeclare(queue.getName(), false, false, false, null);
                 for (RabbitExchanges exchange : queue.exchanges) {
                     if (exchange == null) return;
-                    channel.queueBind(queue.name, exchange.name, queue.routingKey);
+                    channel.queueBind(queue.getName(), exchange.getName(), queue.getRoutingKey());
                 }
             }
         } catch (IOException  e) {
-            throw new RuntimeException("Failed to declare Channels or Exchanges for PlayerDataUpdate in RabbitMQ", e);
+            throw new RuntimeException("Failed to declare Queues in RabbitMQ", e);
         }
     }
 
@@ -84,9 +84,9 @@ public final class RabbitManager {
      * @param properties Properties of the message (type, ttl, ...)
      * @param json      JSON to send as body of the message
 
-     * @see RabbitManager#fireAndForgetAsync(PlayerDataUpdateQueues, AMQP.BasicProperties, JSONObject)
+     * @see RabbitManager#fireAndForgetAsync(RabbitQueues, AMQP.BasicProperties, JSONObject)
      */
-    public void fireAndForget(@NotNull PlayerDataUpdateQueues queue,
+    public void fireAndForget(@NotNull RabbitQueues queue,
                               @Nullable AMQP.BasicProperties properties,
                               @NotNull JSONObject json) {
 
@@ -97,7 +97,7 @@ public final class RabbitManager {
         try {
             for (RabbitExchanges exchange : queue.exchanges) {
                 if (exchange == null) return;
-                channel.basicPublish(exchange.name, queue.routingKey, properties, json.toString().getBytes());
+                channel.basicPublish(exchange.getName(), queue.getRoutingKey(), properties, json.toString().getBytes());
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -111,9 +111,9 @@ public final class RabbitManager {
      * @param queue The queue to send the message to. Contains data about the exchanges, names, types
      * @param properties Properties of the message (type, ttl, ...)
      * @param json      JSON to send as body of the message
-     * @see RabbitManager#fireAndForget(PlayerDataUpdateQueues, AMQP.BasicProperties, JSONObject)
+     * @see RabbitManager#fireAndForget(RabbitQueues, AMQP.BasicProperties, JSONObject)
      */
-    public void fireAndForgetAsync(@NotNull PlayerDataUpdateQueues queue,
+    public void fireAndForgetAsync(@NotNull RabbitQueues queue,
                                    @NotNull AMQP.BasicProperties properties,
                                    @NotNull JSONObject json) {
         CompletableFuture.runAsync(() -> fireAndForget(queue, properties, json));

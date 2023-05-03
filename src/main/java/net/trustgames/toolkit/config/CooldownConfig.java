@@ -7,7 +7,7 @@ public enum CooldownConfig {
     PREFIX("<color:#2472f0>Cooldown | </color>"),
     SPAM(PREFIX.value + "<dark_gray>Please don't spam the activity!");
 
-    public final String value;
+    private final String value;
 
     CooldownConfig(String value) {
         this.value = value;
@@ -16,7 +16,7 @@ public enum CooldownConfig {
     /**
      * @return Formatted component message
      */
-    public final Component getText() {
+    public final Component getFormatted() {
         return MiniMessage.miniMessage().deserialize(value);
     }
 }
