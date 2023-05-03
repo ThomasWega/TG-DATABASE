@@ -77,7 +77,7 @@ public class PlayerUUIDFetcher {
                 connection.commit();
 
                 new UUIDCache(toolkit, playerName).update(uuid);
-                new PlayerDataUpdateEvent(toolkit.getRabbitManager(), uuid, PlayerDataType.UUID);
+                new PlayerDataUpdateEvent(toolkit.getRabbitManager(), uuid, PlayerDataType.UUID).publish();
             } catch (SQLException e) {
                 try {
                     connection.rollback();

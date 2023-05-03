@@ -132,7 +132,7 @@ public final class PlayerDataFetcher {
             PlayerDataCache playerDataCache = new PlayerDataCache(toolkit, uuid, dataType);
             playerDataCache.update(object.toString());
 
-            new PlayerDataUpdateEvent(rabbitManager, uuid, dataType);
+            new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
         } catch (SQLException e) {
             try {
                 connection.rollback();
