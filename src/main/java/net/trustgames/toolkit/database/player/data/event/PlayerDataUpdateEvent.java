@@ -8,15 +8,12 @@ import net.trustgames.toolkit.managers.rabbit.extras.queues.PlayerDataUpdateQueu
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 /**
  * Called when player's data in database updates
  */
 public class PlayerDataUpdateEvent {
-    protected static final List<PlayerDataUpdateListener> registeredListeners = new ArrayList<>();
 
     @Getter
     private final UUID uuid;
@@ -30,14 +27,6 @@ public class PlayerDataUpdateEvent {
         this.rabbitManager = rabbitManager;
         this.uuid = uuid;
         this.dataType = dataType;
-    }
-
-    public static void register(PlayerDataUpdateListener listener) {
-        registeredListeners.add(listener);
-    }
-
-    public static void unregister(PlayerDataUpdateListener listener) {
-        registeredListeners.remove(listener);
     }
 
     public void fire() {
