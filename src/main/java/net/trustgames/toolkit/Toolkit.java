@@ -2,7 +2,6 @@ package net.trustgames.toolkit;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.trustgames.toolkit.database.player.data.event.PlayerDataUpdateEventManager;
 import net.trustgames.toolkit.managers.HikariManager;
 import net.trustgames.toolkit.managers.rabbit.RabbitManager;
 import org.jetbrains.annotations.Nullable;
@@ -16,19 +15,17 @@ public final class Toolkit {
     private static final Logger logger = Logger.getLogger("Toolkit");
     @Getter
     @Setter
-    private static HikariManager hikariManager = null;
+    private HikariManager hikariManager = null;
     @Getter
     @Setter
-    private static RabbitManager rabbitManager = null;
+    private RabbitManager rabbitManager = null;
     @Getter
     @Setter
     @Nullable
-    private static JedisPool jedisPool = null;
+    private JedisPool jedisPool = null;
 
     public static void main(String[] args) {
         // TODO when modifying level the progress resets
-
-        new PlayerDataUpdateEventManager(rabbitManager);
     }
 
     /**

@@ -14,11 +14,11 @@ public class PlayerDataUpdateEventManager {
 
     public PlayerDataUpdateEventManager(RabbitManager rabbitManager) {
         this.rabbitManager = rabbitManager;
-        handleMessageReceive();
     }
 
-    private void handleMessageReceive() {
+    public void receiveEvents() {
         rabbitManager.onDelivery(PlayerDataUpdateQueues.BULK.name, jsonObject -> {
+            System.out.println("TOOLKIT - RECEIVED EVENT!");
             PlayerDataUpdateEvent event = new PlayerDataUpdateEvent(
                     rabbitManager,
                     UUID.fromString(jsonObject.getString("uuid")),
