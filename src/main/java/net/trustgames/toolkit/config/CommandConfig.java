@@ -32,6 +32,13 @@ public enum CommandConfig {
     }
 
     /**
+     * @return String value of the enum
+     */
+    public final String getString(){
+        return value.toString();
+    }
+
+    /**
      * @return double value of the enum
      */
     public final double getDouble() {
