@@ -4,6 +4,8 @@ package net.trustgames.toolkit.database.player.data;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.managers.HikariManager;
 
+import java.util.Arrays;
+
 /**
  * This class handles the creation of the data database table
  */
@@ -27,15 +29,14 @@ public final class PlayerDataDB {
                 .append(tableName)
                 .append("(");
 
-        for (PlayerDataType dataType : PlayerDataType.values()) {
-            if (dataType != PlayerDataType.LEVEL) {
-                statement.append(dataType.getColumnName())
-                        .append(" ")
-                        .append(dataType.getColumnType())
-                        .append(",");
-            }
-
-        }
+        Arrays.stream(PlayerDataType.values())
+                .filter(dataType -> dataType.getColumnName() != null || dataType.getColumnType() != null)
+                .forEach(dataType ->
+                        statement.append(dataType.getColumnName())
+                                .append(" ")
+                                .append(dataType.getColumnType())
+                                .append(",")
+                );
         statement.deleteCharAt(statement.length() - 1);
         statement.append(")");
 
