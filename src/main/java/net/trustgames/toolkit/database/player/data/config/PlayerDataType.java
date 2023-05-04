@@ -14,7 +14,7 @@ public enum PlayerDataType {
     GAMES("games played","games_played", "INT DEFAULT 0"),
     PLAYTIME("playtime","playtime", "INT DEFAULT 0"),
     XP("xp","xp", "INT DEFAULT 0"),
-    LEVEL("levels", null, null),
+    LEVEL("levels", "level", null),
     GEMS("gems","gems", "INT DEFAULT 100"),
     RUBIES("rubies","rubies", "INT DEFAULT 0");
 
