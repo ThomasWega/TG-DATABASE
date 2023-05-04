@@ -38,7 +38,9 @@ public final class Toolkit {
         if (rabbitManager.isChannelInitialized())
             rabbitManager.close();
 
-        if (jedisPool != null)
+        if (jedisPool != null) {
+            Toolkit.getLogger().warning("Jedis activity connections: " + jedisPool.getNumActive());
             jedisPool.destroy();
+        }
     }
 }

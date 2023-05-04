@@ -107,6 +107,7 @@ public final class HikariManager {
     }
 
     public void close() {
+        Toolkit.getLogger().warning("HikariCP activity connections: " + dataSource.getHikariPoolMXBean().getActiveConnections());
         dataSource.close();
     }
 }
