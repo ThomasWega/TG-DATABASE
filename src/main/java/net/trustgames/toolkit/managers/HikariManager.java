@@ -49,7 +49,7 @@ public final class HikariManager {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            logger.severe("Getting a new connection from HikariCP");
+            logger.severe("ERROR: Getting a new connection from HikariCP ");
             throw new RuntimeException(e);
         }
     }
