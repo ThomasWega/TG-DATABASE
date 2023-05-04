@@ -51,6 +51,7 @@ public final class PlayerActivityFetcher {
                             : Optional.of(new PlayerActivity(uuid, activities)));
                 }
             } catch (SQLException e) {
+                System.out.println("RUNTIME EXCEPTION 2");
                 throw new RuntimeException("While fetching Activity of UUID " + uuid + " from the database", e);
             }
         });
@@ -81,6 +82,7 @@ public final class PlayerActivityFetcher {
                     callback.accept(Optional.empty());
                 }
             } catch (SQLException e) {
+                System.out.println("RUNTIME EXCEPTION 3");
                 throw new RuntimeException(e);
             }
         });
@@ -110,6 +112,7 @@ public final class PlayerActivityFetcher {
                 }
             }
         } catch (SQLException e) {
+            System.out.println("RUNTIME EXCEPTION 4");
             throw new RuntimeException("Error inserting player activity into database", e);
         }
     }

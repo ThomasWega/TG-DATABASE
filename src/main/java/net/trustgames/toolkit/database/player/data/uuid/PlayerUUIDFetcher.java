@@ -52,6 +52,7 @@ public class PlayerUUIDFetcher {
                 }
                 callback.accept(false);
             } catch (SQLException e) {
+                System.out.println("RUNTIME EXCEPTION 6");
                 throw new RuntimeException(e);
             }
         });
@@ -84,6 +85,7 @@ public class PlayerUUIDFetcher {
                     connection.rollback();
                     connection.close();
                 } catch (SQLException ex) {
+                    System.out.println("RUNTIME EXCEPTION 7");
                     throw new RuntimeException(ex);
                 }
             }
@@ -115,11 +117,13 @@ public class PlayerUUIDFetcher {
                         }
                         return;
                     } catch (IllegalArgumentException e) {
+                        System.out.println("RUNTIME EXCEPTION 8");
                         throw new RuntimeException("INVALID UUID FOR: " + stringUuid, e);
                     }
                 }
                 callback.accept(Optional.empty());
             } catch (SQLException e) {
+                System.out.println("RUNTIME EXCEPTION 9");
                 throw new RuntimeException(e);
             }
         });

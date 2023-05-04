@@ -49,8 +49,8 @@ public final class HikariManager {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            logger.severe("ERROR: Getting a new connection from HikariCP ");
-            throw new RuntimeException(e);
+            System.out.println("RUNTIME EXCEPTION 1");
+            throw new RuntimeException("Getting a new connection from HikariCP", e);
         }
     }
 
@@ -67,6 +67,7 @@ public final class HikariManager {
                             Thread.sleep(500L);
                             onDataSourceInitialized(callback);
                         } catch (InterruptedException e) {
+                            System.out.println("RUNTIME EXCEPTION 10");
                             throw new RuntimeException(e);
                         }
                     }
@@ -100,8 +101,8 @@ public final class HikariManager {
                     statement.executeUpdate();
                 }
             } catch (SQLException e) {
-                logger.severe("Unable to create missing " + tableName + " table in the database!");
-                throw new RuntimeException(e);
+                System.out.println("RUNTIME EXCEPTION 11");
+                throw new RuntimeException("Unable to create missing " + tableName + " table in the database!", e);
             }
         });
     }

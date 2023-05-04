@@ -87,6 +87,7 @@ public final class PlayerDataFetcher {
                     callback.accept(Optional.empty());
                 }
             } catch (SQLException e) {
+                System.out.println("RUNTIME EXCEPTION 4");
                 throw new RuntimeException(e);
             }
         });
@@ -138,6 +139,7 @@ public final class PlayerDataFetcher {
                 connection.rollback();
                 connection.close();
             } catch (SQLException ex) {
+                System.out.println("RUNTIME EXCEPTION 5");
                 throw new RuntimeException(ex);
             }
         }

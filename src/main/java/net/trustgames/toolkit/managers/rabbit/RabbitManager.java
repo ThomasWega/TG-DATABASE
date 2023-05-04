@@ -42,6 +42,7 @@ public final class RabbitManager {
             declareExchanges();
             declareQueues();
         } catch (IOException | TimeoutException e) {
+            System.out.println("RUNTIME EXCEPTION 12");
             throw new RuntimeException("Failed to declare Channels or Exchanges in RabbitMQ", e);
         }
     }
@@ -54,6 +55,7 @@ public final class RabbitManager {
             try {
                 channel.exchangeDeclare(exchange.getName(), exchange.getType(), true);
             } catch (IOException e) {
+                System.out.println("RUNTIME EXCEPTION 13");
                 throw new RuntimeException("Failed to declare Exchanges in RabbitMQ", e);
             }
         }
@@ -72,6 +74,7 @@ public final class RabbitManager {
                 }
             }
         } catch (IOException  e) {
+            System.out.println("RUNTIME EXCEPTION 14");
             throw new RuntimeException("Failed to declare Queues in RabbitMQ", e);
         }
     }
@@ -139,6 +142,7 @@ public final class RabbitManager {
                 }
             });
         } catch (IOException e) {
+            System.out.println("RUNTIME EXCEPTION 15");
             throw new RuntimeException(e);
         }
     }
@@ -157,11 +161,13 @@ public final class RabbitManager {
                             Thread.sleep(500L);
                             onChannelInitialized(callback);
                         } catch (InterruptedException e) {
+                            System.out.println("RUNTIME EXCEPTION 16");
                             throw new RuntimeException(e);
                         }
                     }
                 }).orTimeout(10L, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
+                    System.out.println("RUNTIME EXCEPTION 17");
                     throw new RuntimeException("RabbitMQ channel initialization timed out!", throwable);
                 });
     }
@@ -184,6 +190,7 @@ public final class RabbitManager {
             try {
                 channel.close();
             } catch (TimeoutException | IOException e) {
+                System.out.println("RUNTIME EXCEPTION 18");
                 throw new RuntimeException(e);
             }
         }
@@ -191,6 +198,7 @@ public final class RabbitManager {
             try {
                 connection.close();
             } catch (IOException e) {
+                System.out.println("RUNTIME EXCEPTION 19");
                 throw new RuntimeException(e);
             }
         }
