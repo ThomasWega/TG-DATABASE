@@ -1,10 +1,7 @@
 package net.trustgames.toolkit.database.player.data.uuid;
 
 import net.trustgames.toolkit.Toolkit;
-import net.trustgames.toolkit.cache.UUIDCache;
 import net.trustgames.toolkit.database.player.data.PlayerDataFetcher;
-import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
-import net.trustgames.toolkit.database.player.data.event.PlayerDataUpdateEvent;
 import net.trustgames.toolkit.managers.HikariManager;
 import net.trustgames.toolkit.utils.UUIDUtils;
 import org.jetbrains.annotations.NotNull;
@@ -22,11 +19,9 @@ import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName
 
 public class PlayerUUIDFetcher {
 
-    private final Toolkit toolkit;
     private final HikariManager hikariManager;
 
     public PlayerUUIDFetcher(@NotNull Toolkit toolkit) {
-        this.toolkit = toolkit;
         this.hikariManager = toolkit.getHikariManager();
     }
 
@@ -37,7 +32,6 @@ public class PlayerUUIDFetcher {
      *
      * @param callback Callback where the result will be saved
      * @implNote Can't fetch anything other that Player's UUID!
-     * @see PlayerUUIDFetcher#updateName(UUID, String)
      */
     public void exists(@NotNull String playerName, Consumer<Boolean> callback) {
         CompletableFuture.runAsync(() -> {
@@ -54,40 +48,6 @@ public class PlayerUUIDFetcher {
             } catch (SQLException e) {
                 System.out.println("RUNTIME EXCEPTION 6");
                 throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * A new row is created for the player either if none existed yet, or if
-     * his name is different from the last time.
-     *
-     * @param uuid       UUID of the Player (primary key)
-     * @param playerName Name of the Player (to be replaced the column with)
-     */
-    public void updateName(@NotNull UUID uuid, @NotNull String playerName) {
-        CompletableFuture.runAsync(() -> {
-            Connection connection = hikariManager.getConnection();
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO " + tableName + " (uuid, name) " +
-                            "VALUES (?, ?) " +
-                            "ON DUPLICATE KEY UPDATE name = VALUES(name)")) {
-                statement.setString(1, uuid.toString());
-                statement.setString(2, playerName);
-                connection.setAutoCommit(false); // disable auto-commit mode to start a transaction
-                statement.executeUpdate();
-                connection.commit();
-
-                new UUIDCache(toolkit, playerName).update(uuid);
-                new PlayerDataUpdateEvent(toolkit.getRabbitManager(), uuid, PlayerDataType.UUID).publish();
-            } catch (SQLException e) {
-                try {
-                    connection.rollback();
-                    connection.close();
-                } catch (SQLException ex) {
-                    System.out.println("RUNTIME EXCEPTION 7");
-                    throw new RuntimeException(ex);
-                }
             }
         });
     }
