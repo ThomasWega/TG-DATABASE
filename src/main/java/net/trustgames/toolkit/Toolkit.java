@@ -39,6 +39,6 @@ public final class Toolkit {
             rabbitManager.close();
 
         if (jedisPool != null)
-            jedisPool.close();
+            jedisPool.destroy();
     }
 }

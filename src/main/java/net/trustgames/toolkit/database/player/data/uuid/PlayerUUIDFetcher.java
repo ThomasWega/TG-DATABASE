@@ -37,7 +37,7 @@ public class PlayerUUIDFetcher {
      *
      * @param callback Callback where the result will be saved
      * @implNote Can't fetch anything other that Player's UUID!
-     * @see PlayerUUIDFetcher#setIfNotExists(String, UUID)
+     * @see PlayerUUIDFetcher#updateName(UUID, String)
      */
     public void exists(@NotNull String playerName, Consumer<Boolean> callback) {
         CompletableFuture.runAsync(() -> {
@@ -58,18 +58,19 @@ public class PlayerUUIDFetcher {
     }
 
     /**
-     * First checks if the player's data in the database exists,
-     * If it doesn't, that means the player doesn't have any data yet
-     * and a new row is created for the player
+     * A new row is created for the player either if none existed yet, or if
+     * his name is different from the last time.
      *
-     * @param playerName Name of the Player
-     * @param uuid       UUID of the Player
+     * @param uuid       UUID of the Player (primary key)
+     * @param playerName Name of the Player (to be replaced the column with)
      */
-    public void setIfNotExists(@NotNull String playerName, @NotNull UUID uuid) {
+    public void updateName(@NotNull UUID uuid, @NotNull String playerName) {
         CompletableFuture.runAsync(() -> {
             Connection connection = hikariManager.getConnection();
             try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT IGNORE INTO " + tableName + " (uuid, name) VALUES (?, ?)")) {
+                    "INSERT INTO " + tableName + " (uuid, name) " +
+                            "VALUES (?, ?) " +
+                            "ON DUPLICATE KEY UPDATE name = VALUES(name)")) {
                 statement.setString(1, uuid.toString());
                 statement.setString(2, playerName);
                 connection.setAutoCommit(false); // disable auto-commit mode to start a transaction
