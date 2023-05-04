@@ -70,7 +70,7 @@ public final class MiniMessageUtils {
                         .resolver(TagResolver.resolver("player_name", Tag.selfClosingInserting(Component.text(
                                 playerName))))
                         .resolver(TagResolver.resolver("player_data", Tag.selfClosingInserting(
-                                Component.text(dataType.name().toLowerCase()))))
+                                Component.text(dataType.getDisplayName().toLowerCase()))))
                         .resolver(TagResolver.resolver("value", Tag.selfClosingInserting(Component.text(value))))
                         .build()
                 )
