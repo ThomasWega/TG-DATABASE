@@ -12,7 +12,7 @@ public enum PlayerDataType {
     KILLS("kills","kills", "INT DEFAULT 0"),
     DEATHS("deaths","deaths", "INT DEFAULT 0"),
     GAMES("games played","games_played", "INT DEFAULT 0"),
-    PLAYTIME("playtime","playtime", "INT DEFAULT 0"),
+    PLAYTIME("hours of playtime","playtime", "INT DEFAULT 0"),
     XP("xp","xp", "INT DEFAULT 0"),
     LEVEL("levels", "level", null),
     GEMS("gems","gems", "INT DEFAULT 100"),

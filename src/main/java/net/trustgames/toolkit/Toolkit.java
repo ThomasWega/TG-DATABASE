@@ -32,10 +32,10 @@ public final class Toolkit {
      * Closes all connections that Toolkit instance uses
      */
     public void closeConnections() {
-        if (hikariManager.isDataSourceInitialized())
+        if (hikariManager != null && hikariManager.isDataSourceInitialized())
             hikariManager.close();
 
-        if (rabbitManager.isChannelInitialized())
+        if (rabbitManager != null && rabbitManager.isChannelInitialized())
             rabbitManager.close();
 
         if (jedisPool != null) {
