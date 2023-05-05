@@ -64,6 +64,9 @@ public final class MiniMessageUtils {
     public static MiniMessage playerData(@NotNull String playerName,
                                          @NotNull PlayerDataType dataType,
                                          @NotNull String value) {
+        if (dataType == PlayerDataType.PLAYTIME) {
+            value = String.format("%.1f", ((Integer.parseInt(value) / 60d) / 60d));
+        }
         return MiniMessage.builder()
                 .tags(TagResolver.builder()
                         .resolver(StandardTags.defaults())
