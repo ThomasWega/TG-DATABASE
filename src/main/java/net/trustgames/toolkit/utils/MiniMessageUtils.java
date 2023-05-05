@@ -2,7 +2,7 @@ package net.trustgames.toolkit.utils;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.Tag;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
@@ -21,7 +21,7 @@ public final class MiniMessageUtils {
         return MiniMessage.builder()
                 .tags(TagResolver.builder()
                         .resolver(StandardTags.defaults())
-                        .resolver(TagResolver.resolver("component", Tag.selfClosingInserting(component)))
+                        .resolver(Placeholder.component("component", component))
                         .build()
                 )
                 .build();
@@ -45,9 +45,8 @@ public final class MiniMessageUtils {
         return MiniMessage.builder()
                 .tags(TagResolver.builder()
                         .resolver(StandardTags.defaults())
-                        .resolver(TagResolver.resolver("player_name", Tag.selfClosingInserting(Component.text(
-                                playerName))))
-                        .resolver(TagResolver.resolver("player_prefix", Tag.selfClosingInserting(prefix)))
+                        .resolver(Placeholder.unparsed("player_name", playerName))
+                        .resolver(Placeholder.component("player_prefix", prefix))
                         .build()
                 )
                 .build();
@@ -67,14 +66,13 @@ public final class MiniMessageUtils {
         if (dataType == PlayerDataType.PLAYTIME) {
             value = String.format("%.1f", ((Integer.parseInt(value) / 60d) / 60d));
         }
+
         return MiniMessage.builder()
                 .tags(TagResolver.builder()
                         .resolver(StandardTags.defaults())
-                        .resolver(TagResolver.resolver("player_name", Tag.selfClosingInserting(Component.text(
-                                playerName))))
-                        .resolver(TagResolver.resolver("player_data", Tag.selfClosingInserting(
-                                Component.text(dataType.getDisplayName().toLowerCase()))))
-                        .resolver(TagResolver.resolver("value", Tag.selfClosingInserting(Component.text(value))))
+                        .resolver(Placeholder.unparsed("player_name", playerName))
+                        .resolver(Placeholder.unparsed("player_data", dataType.getDisplayName()))
+                        .resolver(Placeholder.unparsed("value", value))
                         .build()
                 )
                 .build();
