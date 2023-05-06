@@ -112,7 +112,7 @@ public final class PlayerActivityFetcher {
                 }
             }
         } catch (SQLException e) {
-            System.out.println("RUNTIME EXCEPTION 4");
+            System.out.println("RUNTIME EXCEPTION 20");
             throw new RuntimeException("Error inserting player activity into database", e);
         }
     }
