@@ -7,7 +7,9 @@ import net.trustgames.toolkit.cache.UUIDCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 public final class PlayerData {
@@ -55,15 +57,15 @@ public final class PlayerData {
     /**
      * Gets the data from the Cache or the database
      *
-     * @param callback Consumer with the fetched data, or -1 if no data for found
+     * @param callback Consumer with the fetched data, or empty
      */
-    public void getData(IntConsumer callback) {
+    public void getData(Consumer<Optional<Integer>> callback) {
         new PlayerDataCache(toolkit, uuid, dataType).get(optStringData -> {
             if (optStringData.isEmpty()){
-                callback.accept(-1);
+                callback.accept(Optional.empty());
                 return;
             }
-            callback.accept(Integer.parseInt(optStringData.get()));
+            callback.accept(Optional.of(Integer.parseInt(optStringData.get())));
         });
     }
 
