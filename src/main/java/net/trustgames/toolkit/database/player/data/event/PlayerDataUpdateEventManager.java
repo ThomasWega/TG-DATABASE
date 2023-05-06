@@ -1,9 +1,11 @@
 package net.trustgames.toolkit.database.player.data.event;
 
+import com.rabbitmq.client.Channel;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.managers.rabbit.RabbitManager;
-import net.trustgames.toolkit.managers.rabbit.config.RabbitQueues;
+import net.trustgames.toolkit.managers.rabbit.config.RabbitExchange;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,7 +30,7 @@ public class PlayerDataUpdateEventManager {
      * Add the listener to the list. In case the receiving of events is on,
      * it will receive events from now on
      *
-     * @see PlayerDataUpdateEventManager#receiveEvents()
+     * @see PlayerDataUpdateEventManager#receiveEvents(RabbitExchange)
      */
     public static void register(PlayerDataUpdateListener listener) {
         registeredListeners.add(listener);
@@ -47,15 +49,22 @@ public class PlayerDataUpdateEventManager {
      *
      * @see PlayerDataUpdateEvent
      */
-    public void receiveEvents() {
-        rabbitManager.onDelivery(RabbitQueues.PLAYER_DATA_UPDATE.getName(), jsonObject -> {
-            System.out.println("RABBITMQ RECEIVED");
+    public void receiveEvents(RabbitExchange exchange) {
+        Channel channel = rabbitManager.getChannel();
+        String queue;
+        try {
+            queue = channel.queueDeclare("", false, true, false, null).getQueue();
+            channel.queueBind(queue, exchange.getName(), exchange.getRoutingKey());
+        } catch (IOException e) {
+            System.out.println("RUNTIME EXCEPTION 21");
+            throw new RuntimeException(e);
+        }
+        rabbitManager.onDelivery(queue, jsonObject -> {
             PlayerDataUpdateEvent event = new PlayerDataUpdateEvent(rabbitManager,
                     UUID.fromString(jsonObject.getString("uuid")),
                     jsonObject.getEnum(PlayerDataType.class, "data-type")
             );
             for (PlayerDataUpdateListener listener : registeredListeners){
-                System.out.println("LISTENER -" + listener.toString());
                 listener.onPlayerDataUpdate(event);
             }
         });

@@ -4,27 +4,21 @@ import com.rabbitmq.client.AMQP;
 import lombok.Getter;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.managers.rabbit.RabbitManager;
-import net.trustgames.toolkit.managers.rabbit.config.RabbitQueues;
+import net.trustgames.toolkit.managers.rabbit.config.RabbitExchange;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import java.util.UUID;
 
-public class PlayerDataUpdateEvent {
-
-    @Getter
-    private final UUID uuid;
-    @Getter
-    private final PlayerDataType dataType;
-    @Getter
-    private final RabbitManager rabbitManager;
+public record PlayerDataUpdateEvent(@Getter RabbitManager rabbitManager, @Getter UUID uuid,
+                                    @Getter PlayerDataType dataType) {
 
     /**
      * Called when player's data in database updates
      *
      * @param rabbitManager RabbitManager instance
-     * @param uuid UUID of the player whose data was updated
-     * @param dataType The type of data that was updates
+     * @param uuid          UUID of the player whose data was updated
+     * @param dataType      The type of data that was updates
      */
     public PlayerDataUpdateEvent(@NotNull RabbitManager rabbitManager,
                                  @NotNull UUID uuid,
@@ -47,17 +41,17 @@ public class PlayerDataUpdateEvent {
      * Publish the event to RabbitMQ
      *
      * @param rabbitManager RabbitManager instance
-     * @param event Event with filled in data
+     * @param event         Event with filled in data
      */
     public static void publish(RabbitManager rabbitManager, PlayerDataUpdateEvent event) {
         rabbitManager.fireAndForget(
-                RabbitQueues.PLAYER_DATA_UPDATE,
+                RabbitExchange.EVENT_PLAYER_DATA_UPDATE,
                 new AMQP.BasicProperties().builder()
                         .expiration("5000")
                         .build(),
                 new JSONObject()
-                        .put("uuid", event.getUuid())
-                        .put("data-type", event.getDataType())
+                        .put("uuid", event.uuid())
+                        .put("data-type", event.dataType())
         );
     }
 }

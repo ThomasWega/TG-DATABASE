@@ -30,7 +30,7 @@ public final class PlayerDataDB {
                 .append("(");
 
         Arrays.stream(PlayerDataType.values())
-                .filter(dataType -> dataType.getColumnName() != null || dataType.getColumnType() != null)
+                .filter(dataType -> dataType.getColumnType() != null)
                 .forEach(dataType ->
                         statement.append(dataType.getColumnName())
                                 .append(" ")

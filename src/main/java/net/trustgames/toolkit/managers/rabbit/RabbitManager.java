@@ -2,8 +2,8 @@ package net.trustgames.toolkit.managers.rabbit;
 
 import com.rabbitmq.client.*;
 import lombok.Getter;
-import net.trustgames.toolkit.managers.rabbit.config.RabbitExchanges;
-import net.trustgames.toolkit.managers.rabbit.config.RabbitQueues;
+import net.trustgames.toolkit.managers.rabbit.config.RabbitExchange;
+import net.trustgames.toolkit.managers.rabbit.config.RabbitQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -48,12 +48,15 @@ public final class RabbitManager {
     }
 
     /**
-     * @see RabbitExchanges
+     * @see RabbitExchange
      */
     private void declareExchanges() {
-        for (RabbitExchanges exchange : RabbitExchanges.values()) {
+        for (RabbitExchange exchange : RabbitExchange.values()) {
             try {
-                channel.exchangeDeclare(exchange.getName(), exchange.getType(), true);
+                channel.exchangeDeclare(exchange.getName(), exchange.getType(), false);
+                for (RabbitExchange bound : exchange.getBoundExchanges()){
+                    channel.exchangeBind(exchange.getName(), bound.getName(), exchange.getRoutingKey());
+                }
             } catch (IOException e) {
                 System.out.println("RUNTIME EXCEPTION 13");
                 throw new RuntimeException("Failed to declare Exchanges in RabbitMQ", e);
@@ -62,13 +65,13 @@ public final class RabbitManager {
     }
 
     /**
-     * @see RabbitQueues
+     * @see RabbitQueue
      */
     private void declareQueues() {
         try {
-            for (RabbitQueues queue : RabbitQueues.values()) {
+            for (RabbitQueue queue : RabbitQueue.values()) {
                 channel.queueDeclare(queue.getName(), false, false, false, null);
-                for (RabbitExchanges exchange : queue.exchanges) {
+                for (RabbitExchange exchange : queue.exchanges) {
                     if (exchange == null) return;
                     channel.queueBind(queue.getName(), exchange.getName(), queue.getRoutingKey());
                 }
@@ -83,24 +86,18 @@ public final class RabbitManager {
      * Send a json message to the specified exchange or queue in fire-and-forget mode
      * (is run sync)
      *
-     * @param queue The queue to send the message to. Contains data about the exchanges, names, types
+     * @param exchange The exchange to send the message to. Contains data about the exchanges, names, types
      * @param properties Properties of the message (type, ttl, ...)
      * @param json      JSON to send as body of the message
 
-     * @see RabbitManager#fireAndForgetAsync(RabbitQueues, AMQP.BasicProperties, JSONObject)
+     * @see RabbitManager#fireAndForgetAsync(RabbitExchange, AMQP.BasicProperties, JSONObject)
      */
-    public void fireAndForget(@NotNull RabbitQueues queue,
+    public void fireAndForget(@NotNull RabbitExchange exchange,
                               @Nullable AMQP.BasicProperties properties,
                               @NotNull JSONObject json) {
-
-        if (channel == null) {
-            return;
-        }
-
         try {
-            for (RabbitExchanges exchange : queue.exchanges) {
-                if (exchange == null) return;
-                channel.basicPublish(exchange.getName(), queue.getRoutingKey(), properties, json.toString().getBytes());
+            for (RabbitExchange bound : exchange.getBoundExchanges()) {
+                channel.basicPublish(bound.getName(), exchange.getRoutingKey(), properties, json.toString().getBytes());
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -111,15 +108,15 @@ public final class RabbitManager {
      * Send a json message to the specified queue in fire-and-forget mode
      * (is run async)
      *
-     * @param queue The queue to send the message to. Contains data about the exchanges, names, types
+     * @param exchange The exchange to send the message to. Contains data about the exchanges, names, types
      * @param properties Properties of the message (type, ttl, ...)
      * @param json      JSON to send as body of the message
-     * @see RabbitManager#fireAndForget(RabbitQueues, AMQP.BasicProperties, JSONObject)
+     * @see RabbitManager#fireAndForget(RabbitExchange, AMQP.BasicProperties, JSONObject)
      */
-    public void fireAndForgetAsync(@NotNull RabbitQueues queue,
+    public void fireAndForgetAsync(@NotNull RabbitExchange exchange,
                                    @NotNull AMQP.BasicProperties properties,
                                    @NotNull JSONObject json) {
-        CompletableFuture.runAsync(() -> fireAndForget(queue, properties, json));
+        CompletableFuture.runAsync(() -> fireAndForget(exchange, properties, json));
     }
 
     /**
