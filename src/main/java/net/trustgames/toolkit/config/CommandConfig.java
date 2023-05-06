@@ -2,7 +2,7 @@ package net.trustgames.toolkit.config;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.trustgames.toolkit.utils.MiniMessageUtils;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 public enum CommandConfig {
 
@@ -59,6 +59,9 @@ public enum CommandConfig {
      * @return New formatted Component with replaced id tag
      */
     public final Component addComponent(Component component) {
-        return MiniMessageUtils.component(component).deserialize(value.toString());
+        return MiniMessage.miniMessage().deserialize(
+                value.toString(),
+                Placeholder.component("component", component)
+        );
     }
 }

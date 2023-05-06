@@ -3,8 +3,9 @@ package net.trustgames.toolkit.config.chat;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.trustgames.toolkit.config.PermissionConfig;
-import net.trustgames.toolkit.utils.MiniMessageUtils;
 import org.jetbrains.annotations.NotNull;
 
 public enum ChatConfig {
@@ -40,7 +41,13 @@ public enum ChatConfig {
      */
     public final Component formatMessage(@NotNull String playerName,
                                          @NotNull Component prefix) {
-        return MiniMessageUtils.withPrefix(playerName, prefix).deserialize(value);
+        return MiniMessage.miniMessage().deserialize(
+                value,
+                TagResolver.builder()
+                        .resolver(Placeholder.unparsed("player_name", playerName))
+                        .resolver(Placeholder.component("prefix", prefix))
+                        .build()
+        );
     }
 
     /**
@@ -50,6 +57,9 @@ public enum ChatConfig {
      * @return New formatted Component with replaced id tag
      */
     public final Component addComponent(Component component) {
-        return MiniMessageUtils.component(component).deserialize(value);
+        return MiniMessage.miniMessage().deserialize(
+                value,
+                Placeholder.component("component", component)
+        );
     }
 }
