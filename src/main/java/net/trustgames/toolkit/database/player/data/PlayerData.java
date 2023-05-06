@@ -2,15 +2,20 @@ package net.trustgames.toolkit.database.player.data;
 
 
 import net.trustgames.toolkit.Toolkit;
+import net.trustgames.toolkit.cache.PlayerDataCache;
 import net.trustgames.toolkit.cache.UUIDCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
+import java.util.function.IntConsumer;
 
 public final class PlayerData {
+
+    private final Toolkit toolkit;
     private final PlayerDataFetcher dataFetcher;
     private final UUID uuid;
+    private final PlayerDataType dataType;
 
     public PlayerData(@NotNull Toolkit toolkit,
                       @NotNull UUID uuid,
@@ -19,8 +24,10 @@ public final class PlayerData {
             throw new RuntimeException(this.getClass().getName() + " can't be used to retrieve UUID. " +
                     "Use the " + UUIDCache.class.getName() + " instead!");
         }
+        this.toolkit = toolkit;
         this.uuid = uuid;
         this.dataFetcher = new PlayerDataFetcher(toolkit, dataType);
+        this.dataType = dataType;
     }
 
     /**
@@ -43,6 +50,21 @@ public final class PlayerData {
      */
     public void setData(int target) {
         dataFetcher.update(uuid, target);
+    }
+
+    /**
+     * Gets the data from the Cache or the database
+     *
+     * @param callback Consumer with the fetched data, or -1 if no data for found
+     */
+    public void getData(IntConsumer callback) {
+        new PlayerDataCache(toolkit, uuid, dataType).get(optStringData -> {
+            if (optStringData.isEmpty()){
+                callback.accept(-1);
+                return;
+            }
+            callback.accept(Integer.parseInt(optStringData.get()));
+        });
     }
 
     /**

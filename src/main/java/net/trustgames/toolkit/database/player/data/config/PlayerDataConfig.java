@@ -34,6 +34,10 @@ public enum PlayerDataConfig {
     public final Component formatMessage(@NotNull String playerName,
                                          @NotNull PlayerDataType dataType,
                                          @NotNull String value) {
+        if (dataType == PlayerDataType.PLAYTIME) {
+            // convert seconds to hours and round up to one decimal point
+            value = String.format("%.1f", ((Integer.parseInt(value) / 60d) / 60d));
+        }
         return MiniMessageUtils.playerData(playerName, dataType, value).deserialize(message);
     }
 }
