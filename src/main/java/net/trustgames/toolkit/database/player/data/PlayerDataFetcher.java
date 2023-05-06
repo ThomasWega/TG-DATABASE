@@ -56,7 +56,6 @@ public final class PlayerDataFetcher {
      * @see PlayerDataFetcher#fetch(UUID, Consumer)
      */
     public void fetch(@NotNull UUID uuid, Consumer<Optional<String>> callback) {
-        CompletableFuture.runAsync(() -> {
 
             /*
             in database, only the xp is saved, that means first the XP
@@ -90,7 +89,6 @@ public final class PlayerDataFetcher {
                 System.out.println("RUNTIME EXCEPTION 4");
                 throw new RuntimeException(e);
             }
-        });
     }
 
     /**

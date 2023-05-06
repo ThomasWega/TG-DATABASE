@@ -33,7 +33,6 @@ public final class PlayerActivityFetcher {
      * @param callback Callback where the result will be saved
      */
     public void fetchByUUID(@NotNull UUID uuid, Consumer<Optional<PlayerActivity>> callback) {
-        CompletableFuture.runAsync(() -> {
             try (Connection connection = hikariManager.getConnection();
                  PreparedStatement statement = connection.prepareStatement("SELECT * FROM " + tableName + " WHERE uuid = ? ORDER BY id DESC")) {
                 statement.setString(1, uuid.toString());
@@ -54,7 +53,6 @@ public final class PlayerActivityFetcher {
                 System.out.println("RUNTIME EXCEPTION 2");
                 throw new RuntimeException("While fetching Activity of UUID " + uuid + " from the database", e);
             }
-        });
     }
 
     /**
@@ -64,7 +62,6 @@ public final class PlayerActivityFetcher {
      * @param callback Callback where the result will be saved
      */
     public void fetchByID(long id, Consumer<Optional<PlayerActivity.Activity>> callback) {
-        CompletableFuture.runAsync(() -> {
             try (Connection conn = hikariManager.getConnection();
                  PreparedStatement statement = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE id = ?")) {
                 statement.setString(1, String.valueOf(id));
@@ -85,7 +82,6 @@ public final class PlayerActivityFetcher {
                 System.out.println("RUNTIME EXCEPTION 3");
                 throw new RuntimeException(e);
             }
-        });
     }
 
     /**

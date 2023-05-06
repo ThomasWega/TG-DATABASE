@@ -34,7 +34,6 @@ public class PlayerUUIDFetcher {
      * @implNote Can't fetch anything other that Player's UUID!
      */
     public void exists(@NotNull String playerName, Consumer<Boolean> callback) {
-        CompletableFuture.runAsync(() -> {
             try (Connection connection = hikariManager.getConnection();
                  PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*) FROM " + tableName + " WHERE name = ?")) {
                 statement.setString(1, playerName);
@@ -49,7 +48,6 @@ public class PlayerUUIDFetcher {
                 System.out.println("RUNTIME EXCEPTION 6");
                 throw new RuntimeException(e);
             }
-        });
     }
 
     /**
@@ -62,7 +60,6 @@ public class PlayerUUIDFetcher {
      * @see PlayerDataFetcher#fetch(UUID, Consumer)
      */
     public void fetch(@NotNull String playerName, Consumer<Optional<UUID>> callback) {
-        CompletableFuture.runAsync(() -> {
             try (Connection connection = hikariManager.getConnection();
                  PreparedStatement statement = connection.prepareStatement("SELECT uuid FROM " + tableName + " WHERE name = ?")) {
                 statement.setString(1, playerName);
@@ -78,7 +75,7 @@ public class PlayerUUIDFetcher {
                         return;
                     } catch (IllegalArgumentException e) {
                         System.out.println("RUNTIME EXCEPTION 8");
-                        throw new RuntimeException("INVALID UUID FOR: " + stringUuid, e);
+                        throw e;
                     }
                 }
                 callback.accept(Optional.empty());
@@ -86,6 +83,5 @@ public class PlayerUUIDFetcher {
                 System.out.println("RUNTIME EXCEPTION 9");
                 throw new RuntimeException(e);
             }
-        });
     }
 }
