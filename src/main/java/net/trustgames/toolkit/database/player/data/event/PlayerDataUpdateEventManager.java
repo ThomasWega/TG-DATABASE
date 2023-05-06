@@ -49,11 +49,13 @@ public class PlayerDataUpdateEventManager {
      */
     public void receiveEvents() {
         rabbitManager.onDelivery(RabbitQueues.PLAYER_DATA_UPDATE.getName(), jsonObject -> {
+            System.out.println("RABBITMQ RECEIVED");
             PlayerDataUpdateEvent event = new PlayerDataUpdateEvent(rabbitManager,
                     UUID.fromString(jsonObject.getString("uuid")),
                     jsonObject.getEnum(PlayerDataType.class, "data-type")
             );
             for (PlayerDataUpdateListener listener : registeredListeners){
+                System.out.println("LISTENER -" + listener.toString());
                 listener.onPlayerDataUpdate(event);
             }
         });
