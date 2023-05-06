@@ -75,7 +75,7 @@ public class PlayerUUIDFetcher {
                         return;
                     } catch (IllegalArgumentException e) {
                         System.out.println("RUNTIME EXCEPTION 8");
-                        throw e;
+                        throw new RuntimeException(e);
                     }
                 }
                 callback.accept(Optional.empty());
@@ -83,5 +83,5 @@ public class PlayerUUIDFetcher {
                 System.out.println("RUNTIME EXCEPTION 9");
                 throw new RuntimeException(e);
             }
-    }
+        }
 }
