@@ -52,7 +52,6 @@ public final class PlayerDataFetcher {
      *
      * @param callback Callback where the result will be saved
      * @implNote Can't fetch player's UUID!
-     * @see PlayerDataFetcher#fetch(UUID, Consumer)
      */
     public void fetch(@NotNull UUID uuid, Consumer<Optional<String>> callback) {
 
