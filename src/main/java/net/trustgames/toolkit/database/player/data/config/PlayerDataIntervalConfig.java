@@ -2,7 +2,7 @@ package net.trustgames.toolkit.database.player.data.config;
 
 public enum PlayerDataIntervalConfig {
     UPDATE(5000),
-    DATA_EXPIRY(3600);
+    DATA_EXPIRY(300000);
 
     // values are in milliseconds
 

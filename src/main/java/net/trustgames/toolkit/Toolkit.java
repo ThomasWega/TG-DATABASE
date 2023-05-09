@@ -25,7 +25,8 @@ public final class Toolkit {
     private JedisPool jedisPool = null;
 
     public static void main(String[] args) {
-        // TODO when modifying level the progress resets
+        // TODO bring back CompletableFuture
+        // TODO handle exceptions in CompletableFuture
     }
 
     /**

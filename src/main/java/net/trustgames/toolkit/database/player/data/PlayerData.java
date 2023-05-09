@@ -1,89 +1,79 @@
 package net.trustgames.toolkit.database.player.data;
 
-
+import lombok.*;
 import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.cache.PlayerDataCache;
-import net.trustgames.toolkit.cache.UUIDCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
+import net.trustgames.toolkit.utils.LevelUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
 
-public final class PlayerData {
+import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName;
 
-    private final Toolkit toolkit;
-    private final PlayerDataFetcher dataFetcher;
-    private final UUID uuid;
-    private final PlayerDataType dataType;
+@Data
+@AllArgsConstructor
+public class PlayerData {
+    private UUID uuid;
+    private String name;
+    private int kills;
+    private int deaths;
+    private int gamesPlayed;
+    private int playtimeSeconds;
+    private int xp;
+    private int level;
+    private int gems;
+    private int rubies;
 
-    public PlayerData(@NotNull Toolkit toolkit,
-                      @NotNull UUID uuid,
-                      @NotNull PlayerDataType dataType) {
-        if (dataType == PlayerDataType.UUID) {
-            throw new RuntimeException(this.getClass().getName() + " can't be used to retrieve UUID. " +
-                    "Use the " + UUIDCache.class.getName() + " instead!");
+    public static CompletableFuture<Optional<PlayerData>> getPlayerDataAsync(@NotNull Toolkit toolkit,
+                                                                             @NotNull UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> getPlayerData(toolkit, uuid));
+    }
+
+    public static Optional<PlayerData> getPlayerData(@NotNull Toolkit toolkit,
+                                                     @NotNull UUID uuid) {
+        System.out.println("DATA HAH");
+        PlayerDataCache dataCache = new PlayerDataCache(toolkit.getJedisPool());
+        System.out.println("HHH");
+        Optional<PlayerData> cachedOptData = dataCache.getAllData(uuid);
+        System.out.println("CACHED - " + cachedOptData);
+        if (cachedOptData.isPresent())
+            return cachedOptData;
+
+        // no data in cache
+        System.out.println("DATABASE NOW");
+        try (Connection connection = toolkit.getHikariManager().getConnection();
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM " + tableName + " WHERE uuid = ?")) {
+            statement.setString(1, uuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    PlayerData playerData = new PlayerData(
+                            UUID.fromString(rs.getString(PlayerDataType.UUID.getColumnName())),
+                            rs.getString(PlayerDataType.NAME.getColumnName()),
+                            rs.getInt(PlayerDataType.KILLS.getColumnName()),
+                            rs.getInt(PlayerDataType.DEATHS.getColumnName()),
+                            rs.getInt(PlayerDataType.GAMES_PLAYED.getColumnName()),
+                            rs.getInt(PlayerDataType.PLAYTIME.getColumnName()),
+                            rs.getInt(PlayerDataType.XP.getColumnName()),
+                            LevelUtils.getLevelByXp(rs.getInt(PlayerDataType.XP.getColumnName())),
+                            rs.getInt(PlayerDataType.GEMS.getColumnName()),
+                            rs.getInt(PlayerDataType.RUBIES.getColumnName())
+                    );
+                    System.out.println("OK UPDATE?");
+                    dataCache.updateAllData(uuid, playerData);
+                    return Optional.of(playerData);
+                }
+                return Optional.empty();
+            }
+        } catch (SQLException e) {
+            System.out.println("RUNTIME EXCEPTION 22");
+            throw new RuntimeException(e);
         }
-        this.toolkit = toolkit;
-        this.uuid = uuid;
-        this.dataFetcher = new PlayerDataFetcher(toolkit, dataType);
-        this.dataType = dataType;
-    }
-
-    /**
-     * Add Data to the player and update it in the database
-     *
-     * @param increase Amount of Data to add to the current amount
-     */
-    public void addData(int increase) {
-        dataFetcher.fetch(uuid, data -> {
-            if (data.isEmpty()) return;
-
-            int intData = Integer.parseInt(data.get());
-            intData += increase;
-            dataFetcher.update(uuid, intData);
-        });
-    }
-
-    /**
-     * @param target The final amount of Data the player will have
-     */
-    public void setData(int target) {
-        dataFetcher.update(uuid, target);
-    }
-
-    /**
-     * Gets the data from the Cache or the database
-     *
-     * @param callback Consumer with the fetched data, or empty
-     */
-    public void getData(Consumer<Optional<Integer>> callback) {
-        new PlayerDataCache(toolkit, uuid, dataType).get(optStringData -> {
-            if (optStringData.isEmpty()){
-                callback.accept(Optional.empty());
-                return;
-            }
-            callback.accept(Optional.of(Integer.parseInt(optStringData.get())));
-        });
-    }
-
-    /**
-     * Removes the amount from the total data.
-     * Makes sure that the data will not be set to less than 0
-     *
-     * @param decrease The amount of Data to remove from the total amount.
-     */
-    public void removeData(int decrease) {
-        dataFetcher.fetch(uuid, data -> {
-            if (data.isEmpty()) return;
-
-            int intData = Integer.parseInt(data.get());
-            if (decrease >= intData) {
-                setData(0);
-                return;
-            }
-            setData(intData - decrease);
-        });
     }
 }

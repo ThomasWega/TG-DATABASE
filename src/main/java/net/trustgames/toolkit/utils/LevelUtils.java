@@ -27,12 +27,15 @@ public final class LevelUtils {
      * @return Needed XP to reach the level
      */
     public static int getThreshold(int level) {
+        if (level < 0){
+            level = 0;
+        }
         // return the experience required for the next level
         // the base amount of experience required for level 1
         int base = 100;
         // the exponent that determines the experience curve
         double exponent = 1.2;
-        return (int) Math.floor(base * Math.pow(level, exponent));
+        return (int) Math.round(base * Math.pow(level, exponent));
     }
 
     /**

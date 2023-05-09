@@ -13,11 +13,11 @@ public enum PlayerDataType {
     NAME("name", "VARCHAR(16)"),
     KILLS("kills", "INT DEFAULT 0"),
     DEATHS("deaths", "INT DEFAULT 0"),
-    GAMES("games_played", "INT DEFAULT 0"),
+    GAMES_PLAYED("games", "INT DEFAULT 0"),
     PLAYTIME("playtime", "INT DEFAULT 0"),
     XP("xp", "INT DEFAULT 0"),
     LEVEL("level", null),
-    GEMS("gems", "INT DEFAULT 100"),
+    GEMS("gems", "INT DEFAULT 0"),
     RUBIES("rubies", "INT DEFAULT 0");
 
     @Getter

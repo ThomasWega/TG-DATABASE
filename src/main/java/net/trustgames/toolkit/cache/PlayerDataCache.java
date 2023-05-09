@@ -1,7 +1,6 @@
 package net.trustgames.toolkit.cache;
 
-import net.trustgames.toolkit.Toolkit;
-import net.trustgames.toolkit.database.player.data.PlayerDataFetcher;
+import net.trustgames.toolkit.database.player.data.PlayerData;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataIntervalConfig;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import org.jetbrains.annotations.NotNull;
@@ -9,38 +8,87 @@ import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Get or update player's data in the redis cache
- */
-public final class PlayerDataCache {
+public class PlayerDataCache {
 
     @Nullable
     private final JedisPool pool;
-    private final Toolkit toolkit;
-    private final UUID uuid;
-    private final PlayerDataType dataType;
 
-
-    public PlayerDataCache(@NotNull Toolkit toolkit,
-                           @NotNull UUID uuid,
-                           @NotNull PlayerDataType dataType) {
-        this.pool = toolkit.getJedisPool();
-        this.toolkit = toolkit;
-        this.uuid = uuid;
-        this.dataType = dataType;
+    public PlayerDataCache(@Nullable JedisPool pool) {
+        this.pool = pool;
     }
 
-    /**
-     * Update the specified data of player in the
-     * redis cache with the given value
-     *
-     * @param value Value to update the data with
-     */
-    public void update(@NotNull String value) {
+    public Optional<String> getData(@NotNull UUID uuid,
+                                    @NotNull PlayerDataType dataType) {
+        if (dataType == PlayerDataType.UUID){
+            throw new RuntimeException("Use the method specified for getting UUID from the cache!");
+        }
+
+        if (pool == null) {
+            return Optional.empty();
+        }
+
+        try (Jedis jedis = pool.getResource()) {
+            String result = jedis.hget(uuid.toString(), dataType.getColumnName());
+            return Optional.ofNullable(result);
+        }
+    }
+
+    public Optional<PlayerData> getAllData(@NotNull UUID uuid){
+        if (pool == null) {
+            return Optional.empty();
+        }
+
+        // todo all values need to be present to work
+        Map<PlayerDataType, String> data = new ConcurrentHashMap<>();
+        try (Jedis jedis = pool.getResource()) {
+            for (PlayerDataType dataType : PlayerDataType.values()) {
+                String result = jedis.hget(uuid.toString(), dataType.getColumnName());
+                if (result == null){
+                    return Optional.empty();
+                }
+                data.put(dataType, result);
+            }
+        }
+        return Optional.of(new PlayerData(
+                uuid,
+                data.get(PlayerDataType.NAME),
+                Integer.parseInt(data.get(PlayerDataType.KILLS)),
+                Integer.parseInt(data.get(PlayerDataType.DEATHS)),
+                Integer.parseInt(data.get(PlayerDataType.GAMES_PLAYED)),
+                Integer.parseInt(data.get(PlayerDataType.PLAYTIME)),
+                Integer.parseInt(data.get(PlayerDataType.XP)),
+                Integer.parseInt(data.get(PlayerDataType.LEVEL)),
+                Integer.parseInt(data.get(PlayerDataType.GEMS)),
+                Integer.parseInt(data.get(PlayerDataType.RUBIES))
+        ));
+    }
+
+    public Optional<UUID> getUUID(@Nullable String playerName) {
+
+        if (pool == null) {
+            return Optional.empty();
+        }
+
+        String uuidString;
+        try (Jedis jedis = pool.getResource()) {
+            uuidString = jedis.hget(playerName, PlayerDataType.UUID.getColumnName());
+        }
+
+        if (uuidString == null){
+            return Optional.empty();
+        }
+
+        return Optional.of(UUID.fromString(uuidString));
+    }
+
+    public void updateData(@NotNull UUID uuid,
+                       @NotNull PlayerDataType dataType,
+                       @NotNull String value) {
         if (pool == null) return;
         try (Jedis jedis = pool.getResource()) {
             String column = dataType.getColumnName();
@@ -48,36 +96,53 @@ public final class PlayerDataCache {
         }
     }
 
-    /**
-     * Gets the specified value of data from the cache.
-     * The cache should always be up-to-date with the database.
-     * <p></p>
-     * If the cache is off (pool == null), the data will be taken
-     * straight from the database
-     *
-     * @param callback Callback where the result is saved
-     */
-    public void get(Consumer<Optional<String>> callback) {
-        String result = null;
+    public void updateAllData(@NotNull UUID uuid,
+                              @NotNull PlayerData data) {
+        System.out.println("UPDATE HMM???");
+        if (pool == null) return;
 
-        // cache
-        if (pool != null) {
-            try (Jedis jedis = pool.getResource()) {
-                result = jedis.hget(uuid.toString(), dataType.getColumnName());
-                jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
-            }
+        try (Jedis jedis = pool.getResource()) {
+            jedis.hset(data.getName(), PlayerDataType.UUID.getColumnName(), uuid.toString());
+            jedis.hmset(uuid.toString(), Map.of(
+                    PlayerDataType.NAME.getColumnName(), data.getName(),
+                    PlayerDataType.KILLS.getColumnName(), String.valueOf(data.getKills()),
+                    PlayerDataType.DEATHS.getColumnName(), String.valueOf(data.getDeaths()),
+                    PlayerDataType.GAMES_PLAYED.getColumnName(), String.valueOf(data.getGamesPlayed()),
+                    PlayerDataType.PLAYTIME.getColumnName(), String.valueOf(data.getPlaytimeSeconds()),
+                    PlayerDataType.XP.getColumnName(), String.valueOf(data.getXp()),
+                    PlayerDataType.GEMS.getColumnName(),String.valueOf( data.getGems()),
+                    PlayerDataType.RUBIES.getColumnName(), String.valueOf(data.getRubies())
+            ));
+            jedis.hset(uuid.toString(), PlayerDataType.NAME.getColumnName(), data.getName());
+            jedis.hset(uuid.toString(), PlayerDataType.NAME.getColumnName(), data.getName());
         }
+    }
 
-        // database
-        if (result == null) {
-            PlayerDataFetcher dataFetcher = new PlayerDataFetcher(toolkit, dataType);
-            dataFetcher.fetch(uuid, data -> {
-                // if still null, there is no data on the player even in the database
-                data.ifPresent(this::update);
-                callback.accept(data);
-            });
-        } else {
-            callback.accept(Optional.of(result));
+    public void updateUUID(@NotNull String playerName,
+                           @NotNull UUID uuid) {
+        if (pool == null) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.hset(playerName, PlayerDataType.UUID.getColumnName(), uuid.toString());
+        }
+    }
+
+    public void expire(@NotNull UUID uuid,
+                       @NotNull String playerName) {
+        if (pool == null) return;
+        try (Jedis jedis = pool.getResource()) {
+            long interval = PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds();
+            jedis.expire(playerName, interval);
+            jedis.expire(uuid.toString(), interval);
+        }
+    }
+
+    public void expire(@NotNull UUID uuid,
+                       @NotNull String playerName,
+                       long interval) {
+        if (pool == null) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.expire(playerName, interval);
+            jedis.expire(uuid.toString(), interval);
         }
     }
 }
