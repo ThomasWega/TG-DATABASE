@@ -27,7 +27,6 @@ public final class Toolkit {
     public static void main(String[] args) {
         // TODO bring back CompletableFuture
         // TODO handle exceptions in CompletableFuture
-        // TODO comment everything
     }
 
     /**

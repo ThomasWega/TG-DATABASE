@@ -28,6 +28,13 @@ public final class PlayerDataFetcher {
     private final RabbitManager rabbitManager;
     private final PlayerDataCache dataCache;
 
+    /**
+     * Handles the fetching data types, from the cache,
+     * or if not present - from the database. Also handles the
+     * modifying of data types
+     *
+     * @param toolkit Instance
+     */
     public PlayerDataFetcher(@NotNull Toolkit toolkit) {
         this.hikariManager = toolkit.getHikariManager();
         this.rabbitManager = toolkit.getRabbitManager();
@@ -35,14 +42,14 @@ public final class PlayerDataFetcher {
     }
 
     /**
-     * Fetches a player's data by UUID and data type synchronously.
+     * Fetches a player's data by UUID and data type from the database synchronously.
      *
      * @param uuid     The UUID of the player.
      * @param dataType The data type to fetch.
      * @return An Optional that contains the fetched data, or empty if the data is not found.
      */
     private Optional<Object> fetchByUUID(@NotNull UUID uuid,
-                                    @NotNull PlayerDataType dataType) {
+                                         @NotNull PlayerDataType dataType) {
         System.out.println("UUID FETCH");
         String label = dataType.getColumnName();
         try (Connection connection = hikariManager.getConnection(); PreparedStatement statement = connection.prepareStatement("SELECT " + label + " FROM " + tableName + " WHERE " + PlayerDataType.UUID.getColumnName() + " = ?")) {
@@ -51,7 +58,7 @@ public final class PlayerDataFetcher {
             try (ResultSet results = statement.executeQuery()) {
                 if (results.next()) {
                     Object object = results.getObject(label);
-                    System.out.println("THIS IS GOOD YEY - " + object);
+                    System.out.println("THIS IS GOOD YEYj - " + object);
                     return Optional.of(object);
                 }
                 return Optional.empty();
@@ -63,7 +70,7 @@ public final class PlayerDataFetcher {
     }
 
     /**
-     * Fetches a player's data by name and data type synchronously.
+     * Fetches a player's data by name and data type from the database synchronously.
      *
      * @param playerName The name of the player.
      * @param dataType   The data type to fetch.
@@ -90,13 +97,24 @@ public final class PlayerDataFetcher {
         }
     }
 
+    /**
+     * Inserts the specified data identified by the uuid to the database.
+     * If the key is already present, it updates it
+     *
+     * @param uuid     UUID of the player
+     * @param dataType The data type to modify
+     * @param newValue Value to set the data type to
+     */
     private void modifyByUUID(@NotNull UUID uuid,
                               @NotNull PlayerDataType dataType,
                               @NotNull Object newValue) {
         System.out.println("MODIFY :P -- " + dataType.name());
         String label = dataType.getColumnName();
-        System.out.println("INSERT INTO " + tableName + "(" + PlayerDataType.UUID.getColumnName() + ", " + label + ") " + "VALUES ( " + uuid + ", " + newValue + ") " + "ON DUPLICATE KEY UPDATE " + label + " = VALUES(" + label + ")");
-        try (Connection connection = hikariManager.getConnection(); PreparedStatement statement = connection.prepareStatement("INSERT INTO " + tableName + "(" + PlayerDataType.UUID.getColumnName() + ", " + label + ") " + "VALUES (?, ?) " + "ON DUPLICATE KEY UPDATE " + label + " = VALUES(" + label + ")")) {
+        try (Connection connection = hikariManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "INSERT INTO " + tableName + "(" + PlayerDataType.UUID.getColumnName() + ", " + label + ") " +
+                             "VALUES (?, ?) " + "ON DUPLICATE KEY UPDATE " + label + " = VALUES(" + label + ")")
+        ) {
             System.out.println("MODIFY OH?");
             connection.setAutoCommit(false);
             statement.setString(1, uuid.toString());
@@ -112,6 +130,14 @@ public final class PlayerDataFetcher {
         }
     }
 
+    /**
+     * Inserts the specified data identified by the name to the database.
+     * If the key is already present, it updates it
+     *
+     * @param playerName Name of the player
+     * @param dataType   The data type to modify
+     * @param newValue   Value to set the data type to
+     */
     private void modifyByName(@NotNull String playerName,
                               @NotNull PlayerDataType dataType,
                               @NotNull Object newValue) {
@@ -136,9 +162,31 @@ public final class PlayerDataFetcher {
         }
     }
 
+    /**
+     * Inserts all the data identified by the uuid to the database.
+     * If the key is already present, it updates it
+     *
+     * @param uuid       UUID of the player
+     * @param playerData with all filled in dataTypes!
+     */
     private void modifyAllData(@NotNull UUID uuid,
                                @NotNull PlayerData playerData) {
-        try (Connection connection = hikariManager.getConnection(); PreparedStatement statement = connection.prepareStatement("INSERT INTO " + tableName + "(" + PlayerDataType.UUID.getColumnName() + ", " + PlayerDataType.NAME.getColumnName() + ", " + PlayerDataType.KILLS.getColumnName() + ", " + PlayerDataType.DEATHS.getColumnName() + ", " + PlayerDataType.GAMES_PLAYED.getColumnName() + ", " + PlayerDataType.PLAYTIME.getColumnName() + ", " + PlayerDataType.XP.getColumnName() + ", " + PlayerDataType.GEMS.getColumnName() + ", " + PlayerDataType.RUBIES.getColumnName() + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " + "ON DUPLICATE KEY UPDATE " + PlayerDataType.NAME.getColumnName() + " = VALUES(" + PlayerDataType.NAME.getColumnName() + "), " + PlayerDataType.KILLS.getColumnName() + " = VALUES(" + PlayerDataType.KILLS.getColumnName() + "), " + PlayerDataType.DEATHS.getColumnName() + " = VALUES(" + PlayerDataType.DEATHS.getColumnName() + "), " + PlayerDataType.GAMES_PLAYED.getColumnName() + " = VALUES(" + PlayerDataType.GAMES_PLAYED.getColumnName() + "), " + PlayerDataType.PLAYTIME.getColumnName() + " = VALUES(" + PlayerDataType.PLAYTIME.getColumnName() + "), " + PlayerDataType.XP.getColumnName() + " = VALUES(" + PlayerDataType.XP.getColumnName() + "), " + PlayerDataType.GEMS.getColumnName() + " = VALUES(" + PlayerDataType.GEMS.getColumnName() + "), " + PlayerDataType.RUBIES.getColumnName() + " = VALUES(" + PlayerDataType.RUBIES.getColumnName() + ");")) {
+        try (Connection connection = hikariManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "INSERT INTO " + tableName + "(" + PlayerDataType.UUID.getColumnName() +
+                             ", " + PlayerDataType.NAME.getColumnName() + ", " + PlayerDataType.KILLS.getColumnName() +
+                             ", " + PlayerDataType.DEATHS.getColumnName() + ", " + PlayerDataType.GAMES_PLAYED.getColumnName() +
+                             ", " + PlayerDataType.PLAYTIME.getColumnName() + ", " + PlayerDataType.XP.getColumnName() +
+                             ", " + PlayerDataType.GEMS.getColumnName() + ", " + PlayerDataType.RUBIES.getColumnName() +
+                             ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE " +
+                             PlayerDataType.NAME.getColumnName() + " = VALUES(" + PlayerDataType.NAME.getColumnName() + "), " +
+                             PlayerDataType.KILLS.getColumnName() + " = VALUES(" + PlayerDataType.KILLS.getColumnName() + "), " +
+                             PlayerDataType.DEATHS.getColumnName() + " = VALUES(" + PlayerDataType.DEATHS.getColumnName() + "), " +
+                             PlayerDataType.GAMES_PLAYED.getColumnName() + " = VALUES(" + PlayerDataType.GAMES_PLAYED.getColumnName() + "), " +
+                             PlayerDataType.PLAYTIME.getColumnName() + " = VALUES(" + PlayerDataType.PLAYTIME.getColumnName() + "), " +
+                             PlayerDataType.XP.getColumnName() + " = VALUES(" + PlayerDataType.XP.getColumnName() + "), " +
+                             PlayerDataType.GEMS.getColumnName() + " = VALUES(" + PlayerDataType.GEMS.getColumnName() + "), " +
+                             PlayerDataType.RUBIES.getColumnName() + " = VALUES(" + PlayerDataType.RUBIES.getColumnName() + ");")) {
             connection.setAutoCommit(false);
             statement.setString(1, uuid.toString());
             statement.setString(2, playerData.getName());
@@ -161,6 +209,18 @@ public final class PlayerDataFetcher {
         }
     }
 
+    /**
+     * Set the data type in the database to the specified one.
+     * If the data type is level, it converts it to XP
+     *
+     * @param uuid     UUID of the Player
+     * @param dataType The data type to set the value to
+     * @param newValue The value to set
+     * @see PlayerDataFetcher#addData(UUID, PlayerDataType, int)
+     * @see PlayerDataFetcher#addDataAsync(UUID, PlayerDataType, int)
+     * @see PlayerDataFetcher#subtractData(UUID, PlayerDataType, int)
+     * @see PlayerDataFetcher#subtractDataAsync(UUID, PlayerDataType, int)
+     */
     public void setData(@NotNull UUID uuid,
                         @NotNull PlayerDataType dataType,
                         @NotNull Object newValue) {
@@ -169,13 +229,25 @@ public final class PlayerDataFetcher {
 
             int xpThreshold = LevelUtils.getThreshold(Integer.parseInt(newValue.toString()));
             dataCache.updateData(uuid, PlayerDataType.XP, String.valueOf(xpThreshold));
-            modifyByUUID(uuid, PlayerDataType.XP, String.valueOf(xpThreshold));
+            modifyByUUID(uuid, PlayerDataType.XP, xpThreshold);
             return;
         }
         System.out.println("SET - " + newValue);
         modifyByUUID(uuid, dataType, newValue);
     }
 
+    /**
+     * Add the value to the data type value in the database.
+     * If the data type is level, it converts it to XP
+     *
+     * @param uuid     UUID of the Player
+     * @param dataType The data type to set the value to
+     * @param addValue The value to add to the current value
+     * @see PlayerDataFetcher#setData(UUID, PlayerDataType, Object)
+     * @see PlayerDataFetcher#setDataAsync(UUID, PlayerDataType, Object)
+     * @see PlayerDataFetcher#subtractData(UUID, PlayerDataType, int)
+     * @see PlayerDataFetcher#subtractDataAsync(UUID, PlayerDataType, int)
+     */
     public void addData(@NotNull UUID uuid,
                         @NotNull PlayerDataType dataType,
                         int addValue) {
@@ -200,6 +272,19 @@ public final class PlayerDataFetcher {
         modifyByUUID(uuid, dataType, newValue);
     }
 
+
+    /**
+     * Subtract the value to the data type value in the database.
+     * If the data type is level, it converts it to XP
+     *
+     * @param uuid          UUID of the Player
+     * @param dataType      The data type to set the value to
+     * @param subtractValue The value to remove from the current value
+     * @see PlayerDataFetcher#setData(UUID, PlayerDataType, Object)
+     * @see PlayerDataFetcher#setDataAsync(UUID, PlayerDataType, Object)
+     * @see PlayerDataFetcher#addData(UUID, PlayerDataType, int)
+     * @see PlayerDataFetcher#addDataAsync(UUID, PlayerDataType, int)
+     */
     public void subtractData(@NotNull UUID uuid,
                              @NotNull PlayerDataType dataType,
                              int subtractValue) {
@@ -224,26 +309,41 @@ public final class PlayerDataFetcher {
         modifyByUUID(uuid, dataType, newValue);
     }
 
+    /**
+     * @see PlayerDataFetcher#setData(UUID, PlayerDataType, Object)
+     */
     public void setDataAsync(@NotNull UUID uuid,
                              @NotNull PlayerDataType dataType,
                              @NotNull Object newValue) {
         CompletableFuture.runAsync(() -> setData(uuid, dataType, newValue));
     }
 
+    /**
+     * @see PlayerDataFetcher#addData(UUID, PlayerDataType, int)
+     */
     public void addDataAsync(@NotNull UUID uuid,
                              @NotNull PlayerDataType dataType,
                              int addValue) {
         CompletableFuture.runAsync(() -> addData(uuid, dataType, addValue));
     }
 
+    /**
+     * @see PlayerDataFetcher#subtractData(UUID, PlayerDataType, int)
+     */
     public void subtractDataAsync(@NotNull UUID uuid,
                                   @NotNull PlayerDataType dataType,
                                   int subtractValue) {
         CompletableFuture.runAsync(() -> subtractData(uuid, dataType, subtractValue));
     }
 
-
-        public Optional<UUID> resolveUUID(@NotNull String playerName) {
+    /**
+     * Tries to get the UUID from the cache.
+     * If it's not in the cache, it tries to get it from the database
+     *
+     * @param playerName Name of the player
+     * @return Optional of the player's UUID or empty
+     */
+    public Optional<UUID> resolveUUID(@NotNull String playerName) {
         System.out.println("UUID");
         Optional<UUID> optCachedUuid = dataCache.getUUID(playerName);
         if (optCachedUuid.isEmpty()) {
@@ -259,10 +359,24 @@ public final class PlayerDataFetcher {
         return optCachedUuid;
     }
 
+
+    /**
+     * @see PlayerDataFetcher#resolveUUID(String)
+     */
     public CompletableFuture<Optional<UUID>> resolveUUIDAsync(@NotNull String playerName) {
         return CompletableFuture.supplyAsync(() -> resolveUUID(playerName));
     }
 
+    /**
+     * Tries to get the specific data type value from the cache.
+     * If it's not in the cache, it tries to get it from the database
+     *
+     * @param uuid UUID of the Player
+     * @return Optional of the player's data or empty
+     * @see PlayerDataFetcher#resolveData(String, PlayerDataType)
+     * @see PlayerDataFetcher#resolveDataAsync(String, PlayerDataType)
+     * @see PlayerDataFetcher#resolveDataAsync(UUID, PlayerDataType)
+     */
     public Optional<?> resolveData(@NotNull UUID uuid,
                                    @NotNull PlayerDataType dataType) {
         System.out.println("DATA - UUID");
@@ -286,6 +400,16 @@ public final class PlayerDataFetcher {
         return optCachedUuid;
     }
 
+    /**
+     * Tries to get the specific data type value from the cache.
+     * If it's not in the cache, it tries to get it from the database
+     *
+     * @param playerName Name of the player
+     * @return Optional of the player's data or empty
+     * @see PlayerDataFetcher#resolveData(String, PlayerDataType)
+     * @see PlayerDataFetcher#resolveIntData(String, PlayerDataType)
+     * @see PlayerDataFetcher#resolveIntData(UUID, PlayerDataType)
+     */
     public Optional<?> resolveData(@NotNull String playerName,
                                    @NotNull PlayerDataType dataType) {
         System.out.println("DATA - NAME");
@@ -306,6 +430,16 @@ public final class PlayerDataFetcher {
         return CompletableFuture.supplyAsync(() -> resolveData(playerName, dataType));
     }
 
+    /**
+     * Tries to get the specific data type integer value from the cache.
+     * If it's not in the cache, it tries to get it from the database
+     *
+     * @param uuid UUID of the Player
+     * @return Optional of the player's data or empty
+     * @see PlayerDataFetcher#resolveData(String, PlayerDataType)
+     * @see PlayerDataFetcher#resolveData(UUID, PlayerDataType)
+     * @see PlayerDataFetcher#resolveIntData(String, PlayerDataType)
+     */
     public OptionalInt resolveIntData(@NotNull UUID uuid,
                                       @NotNull PlayerDataType dataType) {
         System.out.println("DATA INT - UUID");
@@ -315,7 +449,17 @@ public final class PlayerDataFetcher {
         );
     }
 
-    public OptionalInt resolveIntData(@NotNull String playerName, 
+    /**
+     * Tries to get the specific data type integer value from the cache.
+     * If it's not in the cache, it tries to get it from the database
+     *
+     * @param playerName Name of the Player
+     * @return Optional of the player's data or empty
+     * @see PlayerDataFetcher#resolveData(String, PlayerDataType)
+     * @see PlayerDataFetcher#resolveData(UUID, PlayerDataType)
+     * @see PlayerDataFetcher#resolveIntData(UUID, PlayerDataType)
+     */
+    public OptionalInt resolveIntData(@NotNull String playerName,
                                       @NotNull PlayerDataType dataType) {
         System.out.println("DATA INT - NAME");
         Optional<UUID> optUuid = resolveUUID(playerName);
@@ -325,27 +469,52 @@ public final class PlayerDataFetcher {
         return resolveIntData(optUuid.get(), dataType);
     }
 
+    /**
+     * @see PlayerDataFetcher#resolveIntData(UUID, PlayerDataType) 
+     */
     public CompletableFuture<OptionalInt> resolveIntDataAsync(@NotNull UUID uuid,
                                                               @NotNull PlayerDataType dataType) {
         return CompletableFuture.supplyAsync(() -> resolveIntData(uuid, dataType));
     }
-    
+
+    /**
+     * @see PlayerDataFetcher#resolveIntData(String, PlayerDataType) 
+     */
     public CompletableFuture<OptionalInt> resolveIntDataAsync(@NotNull String playerName,
                                                               @NotNull PlayerDataType dataType) {
         return CompletableFuture.supplyAsync(() -> resolveIntData(playerName, dataType));
     }
 
+    /**
+     * @param optional Optional to be converted to OptionalInt
+     * @return {@literal Converted Optional<Integer> to OptionalInt}
+     */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private OptionalInt convertOptional(Optional<Integer> optional) {
         return optional.map(OptionalInt::of)
                 .orElse(OptionalInt.empty());
     }
 
+    /**
+     * @param xpData Optional containing the xp value or empty
+     * @return Converted optional of xp to optional of levels
+     */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private Optional<Integer> convertXpToLevels(Optional<Integer> xpData) {
         return xpData.map(LevelUtils::getLevelByXp);
     }
 
+    /**
+     * Calculates the amount of xp needed to do a certain operation on level.
+     * First it gets the current amount of xp, then it calculates what the future
+     * level should be based on the operation (add/subtract/set).
+     * The level progress is also taken into account, to preserve it when adding/subtracting.
+     *
+     * @param uuid UUID of the Player
+     * @param value Modify value
+     * @param action Action to do with the current value (eg. add/remove/set)
+     * @return future XP needed to modify the level to the values given
+     */
     private OptionalInt calculateLevelXpModification(UUID uuid, int value, ModifyAction action) {
         OptionalInt optCurrentXp = resolveIntData(uuid, PlayerDataType.XP);
         if (optCurrentXp.isEmpty()) {
@@ -354,6 +523,8 @@ public final class PlayerDataFetcher {
         int currentXp = optCurrentXp.getAsInt();
         int currentLevel = LevelUtils.getLevelByXp(currentXp);
         int newLevel = currentLevel;
+
+        // if action == SET, just use the given value
         if (action == ModifyAction.ADD) {
             newLevel = currentLevel + value;
         } else if (action == ModifyAction.SUBTRACT) {
@@ -363,10 +534,15 @@ public final class PlayerDataFetcher {
             }
         }
         int newThreshold = getThreshold(newLevel);
+
+        // calculate the progress towards the next level, to preserve the previous progress
         float progress = getProgress(currentXp);
         return OptionalInt.of(Math.round(newThreshold + ((getThreshold(newLevel + 1) - newThreshold) * progress)));
     }
 
+    /**
+     * Action to do with the current value
+     */
     private enum ModifyAction {
         ADD, SUBTRACT
     }

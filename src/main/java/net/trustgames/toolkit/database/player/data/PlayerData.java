@@ -31,11 +31,23 @@ public class PlayerData {
     private int gems;
     private int rubies;
 
+    /**
+     * @see PlayerData#getPlayerData(Toolkit, UUID)
+     */
     public static CompletableFuture<Optional<PlayerData>> getPlayerDataAsync(@NotNull Toolkit toolkit,
                                                                              @NotNull UUID uuid) {
         return CompletableFuture.supplyAsync(() -> getPlayerData(toolkit, uuid));
     }
 
+    /**
+     * Tries to get all the data for the player from the cache.
+     * In case that fails, it tries to get the data from the database.
+     * Then converts everything into new PlayerData object with filled in values.
+     *
+     * @param toolkit instance of Toolkit
+     * @param uuid UUID of the player
+     * @return Optional with PlayerData with filled in values or empty
+     */
     public static Optional<PlayerData> getPlayerData(@NotNull Toolkit toolkit,
                                                      @NotNull UUID uuid) {
         System.out.println("DATA HAH");
