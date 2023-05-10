@@ -1,4 +1,4 @@
-package net.trustgames.toolkit.cache;
+package net.trustgames.toolkit.database.player.data.cache;
 
 import net.trustgames.toolkit.database.player.data.PlayerData;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataIntervalConfig;
@@ -34,6 +34,7 @@ public class PlayerDataCache {
 
         try (Jedis jedis = pool.getResource()) {
             String result = jedis.hget(uuid.toString(), dataType.getColumnName());
+            jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
             return Optional.ofNullable(result);
         }
     }
@@ -48,11 +49,12 @@ public class PlayerDataCache {
         try (Jedis jedis = pool.getResource()) {
             for (PlayerDataType dataType : PlayerDataType.values()) {
                 String result = jedis.hget(uuid.toString(), dataType.getColumnName());
-                if (result == null){
+                if (result == null) {
                     return Optional.empty();
                 }
                 data.put(dataType, result);
             }
+            jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
         }
         return Optional.of(new PlayerData(
                 uuid,
@@ -77,6 +79,7 @@ public class PlayerDataCache {
         String uuidString;
         try (Jedis jedis = pool.getResource()) {
             uuidString = jedis.hget(playerName, PlayerDataType.UUID.getColumnName());
+            jedis.expire(playerName, PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
         }
 
         if (uuidString == null){
@@ -93,6 +96,7 @@ public class PlayerDataCache {
         try (Jedis jedis = pool.getResource()) {
             String column = dataType.getColumnName();
             jedis.hset(uuid.toString(), column, value);
+            jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
         }
     }
 
@@ -113,8 +117,7 @@ public class PlayerDataCache {
                     PlayerDataType.GEMS.getColumnName(),String.valueOf( data.getGems()),
                     PlayerDataType.RUBIES.getColumnName(), String.valueOf(data.getRubies())
             ));
-            jedis.hset(uuid.toString(), PlayerDataType.NAME.getColumnName(), data.getName());
-            jedis.hset(uuid.toString(), PlayerDataType.NAME.getColumnName(), data.getName());
+            jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
         }
     }
 
@@ -123,26 +126,18 @@ public class PlayerDataCache {
         if (pool == null) return;
         try (Jedis jedis = pool.getResource()) {
             jedis.hset(playerName, PlayerDataType.UUID.getColumnName(), uuid.toString());
+            jedis.expire(playerName, PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
         }
     }
 
-    public void expire(@NotNull UUID uuid,
-                       @NotNull String playerName) {
-        if (pool == null) return;
-        try (Jedis jedis = pool.getResource()) {
-            long interval = PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds();
-            jedis.expire(playerName, interval);
-            jedis.expire(uuid.toString(), interval);
-        }
+    public void expire(@NotNull String key) {
+        expire(key, PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
     }
 
-    public void expire(@NotNull UUID uuid,
-                       @NotNull String playerName,
-                       long interval) {
+    public void expire(@NotNull String key, long seconds) {
         if (pool == null) return;
         try (Jedis jedis = pool.getResource()) {
-            jedis.expire(playerName, interval);
-            jedis.expire(uuid.toString(), interval);
+            jedis.expire(key, seconds);
         }
     }
 }

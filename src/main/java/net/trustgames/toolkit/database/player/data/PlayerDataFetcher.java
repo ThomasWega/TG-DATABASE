@@ -1,7 +1,7 @@
 package net.trustgames.toolkit.database.player.data;
 
 import net.trustgames.toolkit.Toolkit;
-import net.trustgames.toolkit.cache.PlayerDataCache;
+import net.trustgames.toolkit.database.player.data.cache.PlayerDataCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.database.player.data.event.PlayerDataUpdateEvent;
 import net.trustgames.toolkit.managers.HikariManager;
