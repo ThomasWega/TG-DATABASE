@@ -2,6 +2,7 @@ package net.trustgames.toolkit.managers.rabbit;
 
 import com.rabbitmq.client.*;
 import lombok.Getter;
+import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.managers.rabbit.config.RabbitExchange;
 import net.trustgames.toolkit.managers.rabbit.config.RabbitQueue;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +15,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class RabbitManager {
 
@@ -22,6 +25,8 @@ public final class RabbitManager {
 
     @Getter
     private final Channel channel;
+
+    private final Logger logger = Toolkit.getLogger();
 
     /**
      * Sets parameters and creates new channel and queue.
@@ -59,7 +64,7 @@ public final class RabbitManager {
                 }
             } catch (IOException e) {
                 System.out.println("RUNTIME EXCEPTION 13");
-                throw new RuntimeException("Failed to declare Exchanges in RabbitMQ", e);
+                throw new RuntimeException("Failed to declare or bind Exchange " + exchange.getName() + " in RabbitMQ", e);
             }
         }
     }
@@ -68,17 +73,17 @@ public final class RabbitManager {
      * @see RabbitQueue
      */
     private void declareQueues() {
-        try {
-            for (RabbitQueue queue : RabbitQueue.values()) {
+        for (RabbitQueue queue : RabbitQueue.values()) {
+            try {
                 channel.queueDeclare(queue.getName(), false, false, false, null);
                 for (RabbitExchange exchange : queue.exchanges) {
                     if (exchange == null) return;
                     channel.queueBind(queue.getName(), exchange.getName(), queue.getRoutingKey());
                 }
+            } catch (IOException  e) {
+                System.out.println("RUNTIME EXCEPTION 14");
+                throw new RuntimeException("Failed to declare or bind Queue " + queue.getName() + " in RabbitMQ", e);
             }
-        } catch (IOException  e) {
-            System.out.println("RUNTIME EXCEPTION 14");
-            throw new RuntimeException("Failed to declare Queues in RabbitMQ", e);
         }
     }
 
@@ -100,7 +105,8 @@ public final class RabbitManager {
                 channel.basicPublish(bound.getName(), exchange.getRoutingKey(), properties, json.toString().getBytes());
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("RUNTIME EXCEPTION 23");
+            throw new RuntimeException("Error occurred while trying to publish message to exchange " + exchange.getName(), e);
         }
     }
 
@@ -116,7 +122,11 @@ public final class RabbitManager {
     public void fireAndForgetAsync(@NotNull RabbitExchange exchange,
                                    @NotNull AMQP.BasicProperties properties,
                                    @NotNull JSONObject json) {
-        CompletableFuture.runAsync(() -> fireAndForget(exchange, properties, json));
+        CompletableFuture.runAsync(() -> fireAndForget(exchange, properties, json))
+                .exceptionally(throwable -> {
+                    logger.log(Level.SEVERE, "Exception occurred while trying to publish message to exchange " + exchange.getName() + " async in RabbitMQ", throwable);
+                    return null;
+                });
     }
 
     /**
@@ -140,7 +150,7 @@ public final class RabbitManager {
             });
         } catch (IOException e) {
             System.out.println("RUNTIME EXCEPTION 15");
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error occurred while trying to consume messages from Queue " + queueName, e);
         }
     }
 
@@ -159,13 +169,13 @@ public final class RabbitManager {
                             onChannelInitialized(callback);
                         } catch (InterruptedException e) {
                             System.out.println("RUNTIME EXCEPTION 16");
-                            throw new RuntimeException(e);
+                            throw new RuntimeException("Exception occurred while sleeping the RabbitMQ channel initialization thread", e);
                         }
                     }
                 }).orTimeout(10L, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
-                    System.out.println("RUNTIME EXCEPTION 17");
-                    throw new RuntimeException("RabbitMQ channel initialization timed out!", throwable);
+                    logger.log(Level.SEVERE, "RabbitMQ channel initialization timed out!", throwable);
+                    return null;
                 });
     }
 
@@ -188,7 +198,7 @@ public final class RabbitManager {
                 channel.close();
             } catch (TimeoutException | IOException e) {
                 System.out.println("RUNTIME EXCEPTION 18");
-                throw new RuntimeException(e);
+                throw new RuntimeException("Exception occurred while trying to close RabbitMQ channel", e);
             }
         }
         if (connection != null) {
@@ -196,7 +206,7 @@ public final class RabbitManager {
                 connection.close();
             } catch (IOException e) {
                 System.out.println("RUNTIME EXCEPTION 19");
-                throw new RuntimeException(e);
+                throw new RuntimeException("Exception occurred while trying to close RabbitMQ channel", e);
             }
         }
         factory = null;

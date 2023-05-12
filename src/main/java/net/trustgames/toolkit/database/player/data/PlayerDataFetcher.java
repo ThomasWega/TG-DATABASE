@@ -17,6 +17,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName;
 import static net.trustgames.toolkit.utils.LevelUtils.getProgress;
@@ -27,6 +29,8 @@ public final class PlayerDataFetcher {
     private final HikariManager hikariManager;
     private final RabbitManager rabbitManager;
     private final PlayerDataCache dataCache;
+
+    private final Logger logger = Toolkit.getLogger();
 
     /**
      * Handles the fetching data types, from the cache,
@@ -64,8 +68,7 @@ public final class PlayerDataFetcher {
                 return Optional.empty();
             }
         } catch (SQLException e) {
-
-            throw new RuntimeException(e);
+            throw new RuntimeException("Exception occurred while getting " + dataType.getColumnName() + " data type from the database by UUID " + uuid, e);
         }
     }
 
@@ -93,7 +96,7 @@ public final class PlayerDataFetcher {
                 return Optional.empty();
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Exception occurred while getting " + dataType.getColumnName() + " data type from the database by name " + playerName, e);
         }
     }
 
@@ -126,7 +129,7 @@ public final class PlayerDataFetcher {
             dataCache.updateData(uuid, dataType, newValue.toString());
             new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by UUID " + uuid, e);
         }
     }
 
@@ -158,7 +161,7 @@ public final class PlayerDataFetcher {
                 new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
             });
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by name " + playerName, e);
         }
     }
 
@@ -205,7 +208,7 @@ public final class PlayerDataFetcher {
             // TODO different event (all update)
             // new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Exception occurred while modifying all player data type in the database by UUID " + uuid, e);
         }
     }
 
@@ -216,10 +219,9 @@ public final class PlayerDataFetcher {
      * @param uuid     UUID of the Player
      * @param dataType The data type to set the value to
      * @param newValue The value to set
+     * @see PlayerDataFetcher#setData(String, PlayerDataType, Object)
      * @see PlayerDataFetcher#addData(UUID, PlayerDataType, int)
-     * @see PlayerDataFetcher#addDataAsync(UUID, PlayerDataType, int)
      * @see PlayerDataFetcher#subtractData(UUID, PlayerDataType, int)
-     * @see PlayerDataFetcher#subtractDataAsync(UUID, PlayerDataType, int)
      */
     public void setData(@NotNull UUID uuid,
                         @NotNull PlayerDataType dataType,
@@ -237,16 +239,26 @@ public final class PlayerDataFetcher {
     }
 
     /**
+     * @see PlayerDataFetcher#setData(UUID, PlayerDataType, Object)
+     */
+    public void setData(@NotNull String playerName,
+                        @NotNull PlayerDataType dataType,
+                        @NotNull Object newValue) {
+        Optional<UUID> optUuid = resolveUUID(playerName);
+        if (optUuid.isEmpty()) return;
+        setData(optUuid.get(), dataType, newValue);
+    }
+
+    /**
      * Add the value to the data type value in the database.
      * If the data type is level, it converts it to XP
      *
      * @param uuid     UUID of the Player
      * @param dataType The data type to set the value to
      * @param addValue The value to add to the current value
+     * @see PlayerDataFetcher#addData(String, PlayerDataType, int)
      * @see PlayerDataFetcher#setData(UUID, PlayerDataType, Object)
-     * @see PlayerDataFetcher#setDataAsync(UUID, PlayerDataType, Object)
      * @see PlayerDataFetcher#subtractData(UUID, PlayerDataType, int)
-     * @see PlayerDataFetcher#subtractDataAsync(UUID, PlayerDataType, int)
      */
     public void addData(@NotNull UUID uuid,
                         @NotNull PlayerDataType dataType,
@@ -272,6 +284,17 @@ public final class PlayerDataFetcher {
         modifyByUUID(uuid, dataType, newValue);
     }
 
+    /**
+     * @see PlayerDataFetcher#addData(UUID, PlayerDataType, int)
+     */
+    public void addData(@NotNull String playerName,
+                        @NotNull PlayerDataType dataType,
+                        int addValue) {
+        Optional<UUID> optUuid = resolveUUID(playerName);
+        if (optUuid.isEmpty()) return;
+        addData(optUuid.get(), dataType, addValue);
+    }
+
 
     /**
      * Subtract the value to the data type value in the database.
@@ -280,10 +303,9 @@ public final class PlayerDataFetcher {
      * @param uuid          UUID of the Player
      * @param dataType      The data type to set the value to
      * @param subtractValue The value to remove from the current value
+     * @see PlayerDataFetcher#subtractData(String, PlayerDataType, int)
      * @see PlayerDataFetcher#setData(UUID, PlayerDataType, Object)
-     * @see PlayerDataFetcher#setDataAsync(UUID, PlayerDataType, Object)
      * @see PlayerDataFetcher#addData(UUID, PlayerDataType, int)
-     * @see PlayerDataFetcher#addDataAsync(UUID, PlayerDataType, int)
      */
     public void subtractData(@NotNull UUID uuid,
                              @NotNull PlayerDataType dataType,
@@ -310,30 +332,98 @@ public final class PlayerDataFetcher {
     }
 
     /**
+     * @see PlayerDataFetcher#subtractData(UUID, PlayerDataType, int)
+     */
+    public void subtractData(@NotNull String playerName,
+                             @NotNull PlayerDataType dataType,
+                             int subtractValue) {
+        Optional<UUID> optUuid = resolveUUID(playerName);
+        if (optUuid.isEmpty()) return;
+        subtractData(optUuid.get(), dataType, subtractValue);
+    }
+
+    /**
      * @see PlayerDataFetcher#setData(UUID, PlayerDataType, Object)
+     * @see PlayerDataFetcher#setDataAsync(String, PlayerDataType, Object)
      */
     public void setDataAsync(@NotNull UUID uuid,
                              @NotNull PlayerDataType dataType,
                              @NotNull Object newValue) {
-        CompletableFuture.runAsync(() -> setData(uuid, dataType, newValue));
+        CompletableFuture.runAsync(() -> setData(uuid, dataType, newValue))
+                .exceptionally(throwable -> {
+                    logger.log(Level.SEVERE, "Exception occurred while setting player data by UUID " + uuid + " async", throwable);
+                    return null;
+                });
+    }
+
+    /**
+     * @see PlayerDataFetcher#setData(UUID, PlayerDataType, Object)
+     * @see PlayerDataFetcher#setDataAsync(UUID, PlayerDataType, Object)
+     */
+    public void setDataAsync(@NotNull String playerName,
+                             @NotNull PlayerDataType dataType,
+                             @NotNull Object newValue) {
+        CompletableFuture.runAsync(() -> setData(playerName, dataType, newValue))
+                .exceptionally(throwable -> {
+                    logger.log(Level.SEVERE, "Exception occurred while setting player data by name " + playerName + " async", throwable);
+                    return null;
+                });
     }
 
     /**
      * @see PlayerDataFetcher#addData(UUID, PlayerDataType, int)
+     * @see PlayerDataFetcher#addDataAsync(String, PlayerDataType, int)
      */
     public void addDataAsync(@NotNull UUID uuid,
                              @NotNull PlayerDataType dataType,
                              int addValue) {
-        CompletableFuture.runAsync(() -> addData(uuid, dataType, addValue));
+        CompletableFuture.runAsync(() -> addData(uuid, dataType, addValue))
+                .exceptionally(throwable -> {
+                    logger.log(Level.SEVERE, "Exception occurred while adding player data by UUID " + uuid + " async", throwable);
+                    return null;
+                });
+    }
+
+    /**
+     * @see PlayerDataFetcher#addData(UUID, PlayerDataType, int)
+     * @see PlayerDataFetcher#addDataAsync(UUID, PlayerDataType, int)
+     */
+    public void addDataAsync(@NotNull String playerName,
+                             @NotNull PlayerDataType dataType,
+                             int addValue) {
+        CompletableFuture.runAsync(() -> addData(playerName, dataType, addValue))
+                .exceptionally(throwable -> {
+                    logger.log(Level.SEVERE, "Exception occurred while adding player data by name " + playerName + " async", throwable);
+                    return null;
+                });
     }
 
     /**
      * @see PlayerDataFetcher#subtractData(UUID, PlayerDataType, int)
+     * @see PlayerDataFetcher#subtractDataAsync(String, PlayerDataType, int)
      */
     public void subtractDataAsync(@NotNull UUID uuid,
                                   @NotNull PlayerDataType dataType,
                                   int subtractValue) {
-        CompletableFuture.runAsync(() -> subtractData(uuid, dataType, subtractValue));
+        CompletableFuture.runAsync(() -> subtractData(uuid, dataType, subtractValue))
+                .exceptionally(throwable -> {
+                    logger.log(Level.SEVERE, "Exception occurred while subtracting player data by UUID " + uuid + " async", throwable);
+                    return null;
+                });
+    }
+
+    /**
+     * @see PlayerDataFetcher#subtractData(UUID, PlayerDataType, int)
+     * @see PlayerDataFetcher#subtractDataAsync(UUID, PlayerDataType, int)
+     */
+    public void subtractDataAsync(@NotNull String playerName,
+                                  @NotNull PlayerDataType dataType,
+                                  int subtractValue) {
+        CompletableFuture.runAsync(() -> subtractData(playerName, dataType, subtractValue))
+                .exceptionally(throwable -> {
+                    logger.log(Level.SEVERE, "Exception occurred while subtracting player data by name " + playerName + " async", throwable);
+                    return null;
+                });
     }
 
     /**
@@ -364,7 +454,11 @@ public final class PlayerDataFetcher {
      * @see PlayerDataFetcher#resolveUUID(String)
      */
     public CompletableFuture<Optional<UUID>> resolveUUIDAsync(@NotNull String playerName) {
-        return CompletableFuture.supplyAsync(() -> resolveUUID(playerName));
+        return CompletableFuture.supplyAsync(() -> resolveUUID(playerName))
+                .exceptionally(throwable -> {
+                    logger.log(Level.SEVERE, "Exception occurred while resolving player UUID by name " + playerName + " async", throwable);
+                    return Optional.empty();
+                });
     }
 
     /**
@@ -422,12 +516,29 @@ public final class PlayerDataFetcher {
 
     public CompletableFuture<Optional<?>> resolveDataAsync(@NotNull UUID uuid,
                                                            @NotNull PlayerDataType dataType) {
-        return CompletableFuture.supplyAsync(() -> resolveData(uuid, dataType));
+        return CompletableFuture.supplyAsync(() -> resolveData(uuid, dataType))
+                .handle((result, exception) -> {
+                    if (exception != null) {
+                        logger.log(Level.SEVERE, "Exception occurred while resolving player data by UUID " + uuid + " async", exception);
+                        return Optional.empty();
+                    } else {
+                        return result;
+                    }
+                });
     }
 
     public CompletableFuture<Optional<?>> resolveDataAsync(@NotNull String playerName,
                                                            @NotNull PlayerDataType dataType) {
-        return CompletableFuture.supplyAsync(() -> resolveData(playerName, dataType));
+        System.out.println("BEFORE DATA - NAME (CORRECT?)");
+        return CompletableFuture.supplyAsync(() -> resolveData(playerName, dataType))
+                .handle((result, exception) -> {
+                    if (exception != null) {
+                        logger.log(Level.SEVERE, "Exception occurred while resolving player data by name " + playerName + " async", exception);
+                        return Optional.empty();
+                    } else {
+                        return result;
+                    }
+                });
     }
 
     /**
@@ -474,7 +585,15 @@ public final class PlayerDataFetcher {
      */
     public CompletableFuture<OptionalInt> resolveIntDataAsync(@NotNull UUID uuid,
                                                               @NotNull PlayerDataType dataType) {
-        return CompletableFuture.supplyAsync(() -> resolveIntData(uuid, dataType));
+        return CompletableFuture.supplyAsync(() -> resolveIntData(uuid, dataType))
+                .handle((result, exception) -> {
+                    if (exception != null) {
+                        logger.log(Level.SEVERE, "Exception occurred while resolving player int data by UUID " + uuid + " async", exception);
+                        return OptionalInt.empty();
+                    } else {
+                        return result;
+                    }
+                });
     }
 
     /**
@@ -482,7 +601,15 @@ public final class PlayerDataFetcher {
      */
     public CompletableFuture<OptionalInt> resolveIntDataAsync(@NotNull String playerName,
                                                               @NotNull PlayerDataType dataType) {
-        return CompletableFuture.supplyAsync(() -> resolveIntData(playerName, dataType));
+        return CompletableFuture.supplyAsync(() -> resolveIntData(playerName, dataType))
+                .handle((result, exception) -> {
+                    if (exception != null) {
+                        logger.log(Level.SEVERE, "Exception occurred while resolving player int data by name " + playerName + " async", exception);
+                        return OptionalInt.empty();
+                    } else {
+                        return result;
+                    }
+                });
     }
 
     /**

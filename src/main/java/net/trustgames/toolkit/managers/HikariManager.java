@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -50,7 +51,7 @@ public final class HikariManager {
             return dataSource.getConnection();
         } catch (SQLException e) {
             System.out.println("RUNTIME EXCEPTION 1");
-            throw new RuntimeException("Getting a new connection from HikariCP", e);
+            throw new RuntimeException("Exception occurred while getting a new connection from HikariCP Pool", e);
         }
     }
 
@@ -68,19 +69,19 @@ public final class HikariManager {
                             onDataSourceInitialized(callback);
                         } catch (InterruptedException e) {
                             System.out.println("RUNTIME EXCEPTION 10");
-                            throw new RuntimeException(e);
+                            throw new RuntimeException("Exception occurred while sleeping the HikariCP data source initialization thread", e);
                         }
                     }
-                }).orTimeout(10L, TimeUnit.SECONDS)
+                })
+                .orTimeout(10L, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
-                    Toolkit.getLogger().severe("HikariCP data source initialization timed out!");
+                    logger.log(Level.SEVERE, "HikariCP data source initialization timed out!", throwable);
                     return null;
                 });
     }
 
     /**
-     * @return
-     * true - if datasource is initialized<p>
+     * @return true - if datasource is initialized<p>
      * false - if datasource is not initialized
      */
     public boolean isDataSourceInitialized() {
@@ -96,15 +97,19 @@ public final class HikariManager {
      */
     public void initializeTable(@NotNull String tableName, @NotNull String stringStatement) {
         CompletableFuture.runAsync(() -> {
-            try (Connection connection = getConnection()) {
-                try (PreparedStatement statement = connection.prepareStatement(stringStatement)) {
-                    statement.executeUpdate();
-                }
-            } catch (SQLException e) {
-                System.out.println("RUNTIME EXCEPTION 11");
-                throw new RuntimeException("Unable to create missing " + tableName + " table in the database!", e);
-            }
-        });
+                    try (Connection connection = getConnection()) {
+                        try (PreparedStatement statement = connection.prepareStatement(stringStatement)) {
+                            statement.executeUpdate();
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("RUNTIME EXCEPTION 11");
+                        throw new RuntimeException("Database access error occurred while trying to create missing " + tableName + " table in the database", e);
+                    }
+                })
+                .exceptionally(throwable -> {
+                    logger.log(Level.SEVERE, "Exception occurred while trying to create missing " + tableName + " table in the database", throwable);
+                    return null;
+                });
     }
 
     public void close() {

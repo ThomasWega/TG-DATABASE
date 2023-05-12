@@ -1,6 +1,7 @@
 package net.trustgames.toolkit.database.player.data;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.database.player.data.cache.PlayerDataCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
@@ -14,6 +15,7 @@ import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName;
 
@@ -36,7 +38,11 @@ public class PlayerData {
      */
     public static CompletableFuture<Optional<PlayerData>> getPlayerDataAsync(@NotNull Toolkit toolkit,
                                                                              @NotNull UUID uuid) {
-        return CompletableFuture.supplyAsync(() -> getPlayerData(toolkit, uuid));
+        return CompletableFuture.supplyAsync(() -> getPlayerData(toolkit, uuid))
+                .exceptionally(throwable -> {
+                    Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid +" async", throwable);
+                    return Optional.empty();
+                });
     }
 
     /**
@@ -85,7 +91,7 @@ public class PlayerData {
             }
         } catch (SQLException e) {
             System.out.println("RUNTIME EXCEPTION 22");
-            throw new RuntimeException(e);
+            throw new RuntimeException("Exception occurred while getting PlayerData object by UUID " + uuid, e);
         }
     }
 }

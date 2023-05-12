@@ -29,6 +29,7 @@ public final class Toolkit {
         // TODO handle exceptions in CompletableFuture
     }
 
+
     /**
      * Closes all connections that Toolkit instance uses
      */

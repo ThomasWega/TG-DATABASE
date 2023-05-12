@@ -57,7 +57,7 @@ public class PlayerDataUpdateEventManager {
             channel.queueBind(queue, exchange.getName(), exchange.getRoutingKey());
         } catch (IOException e) {
             System.out.println("RUNTIME EXCEPTION 21");
-            throw new RuntimeException(e);
+            throw new RuntimeException("Exception occurred while creating consumer queue for exchange " + exchange.getName(), e);
         }
         rabbitManager.onDelivery(queue, jsonObject -> {
             PlayerDataUpdateEvent event = new PlayerDataUpdateEvent(rabbitManager,
