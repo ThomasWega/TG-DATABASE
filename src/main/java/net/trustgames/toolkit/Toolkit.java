@@ -25,8 +25,6 @@ public final class Toolkit {
     private JedisPool jedisPool = null;
 
     public static void main(String[] args) {
-        // TODO bring back CompletableFuture
-        // TODO handle exceptions in CompletableFuture
     }
 
 

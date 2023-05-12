@@ -214,7 +214,10 @@ public final class PlayerDataFetcher {
 
     /**
      * Set the data type in the database to the specified one.
-     * If the data type is level, it converts it to XP
+     * If the data type is LEVEL, it converts it to xp and updates
+     * the xp in the database, as well as the level in the cache.
+     * If the datatype is XP, it updates it in the database and
+     * converts it to level to update the level amount in cache
      *
      * @param uuid     UUID of the Player
      * @param dataType The data type to set the value to
@@ -226,12 +229,14 @@ public final class PlayerDataFetcher {
     public void setData(@NotNull UUID uuid,
                         @NotNull PlayerDataType dataType,
                         @NotNull Object newValue) {
-        if (dataType == PlayerDataType.LEVEL) {
-            dataCache.updateData(uuid, PlayerDataType.LEVEL, newValue.toString());
 
-            int xpThreshold = LevelUtils.getThreshold(Integer.parseInt(newValue.toString()));
-            dataCache.updateData(uuid, PlayerDataType.XP, String.valueOf(xpThreshold));
-            modifyByUUID(uuid, PlayerDataType.XP, xpThreshold);
+        if (dataType == PlayerDataType.XP) {
+            handleXpUpdate(uuid, Integer.parseInt(newValue.toString()), ModifyAction.SET);
+            return;
+        }
+
+        if (dataType == PlayerDataType.LEVEL) {
+            handleLevelUpdate(uuid, Integer.parseInt(newValue.toString()), ModifyAction.SET);
             return;
         }
         System.out.println("SET - " + newValue);
@@ -251,7 +256,10 @@ public final class PlayerDataFetcher {
 
     /**
      * Add the value to the data type value in the database.
-     * If the data type is level, it converts it to XP
+     * If the data type is LEVEL, it converts it to xp and updates
+     * the xp in the database, as well as the level in the cache.
+     * If the datatype is XP, it updates it in the database and
+     * converts it to level to update the level amount in cache
      *
      * @param uuid     UUID of the Player
      * @param dataType The data type to set the value to
@@ -268,12 +276,12 @@ public final class PlayerDataFetcher {
         System.out.println("CURRENT ADD - " + currentValue);
         if (currentValue.isEmpty()) return;
 
+        if (dataType == PlayerDataType.XP) {
+            handleXpUpdate(uuid, addValue, ModifyAction.ADD);
+            return;
+        }
         if (dataType == PlayerDataType.LEVEL) {
-            calculateLevelXpModification(uuid, addValue, ModifyAction.ADD).ifPresent(newValue -> {
-                dataCache.updateData(uuid, PlayerDataType.LEVEL, String.valueOf(LevelUtils.getLevelByXp(newValue)));
-                dataCache.updateData(uuid, PlayerDataType.XP, String.valueOf(newValue));
-                modifyByUUID(uuid, PlayerDataType.XP, newValue);
-            });
+            handleLevelUpdate(uuid, addValue, ModifyAction.ADD);
             return;
         }
 
@@ -298,7 +306,10 @@ public final class PlayerDataFetcher {
 
     /**
      * Subtract the value to the data type value in the database.
-     * If the data type is level, it converts it to XP
+     * If the data type is LEVEL, it converts it to xp and updates
+     * the xp in the database, as well as the level in the cache.
+     * If the datatype is XP, it updates it in the database and
+     * converts it to level to update the level amount in cache
      *
      * @param uuid          UUID of the Player
      * @param dataType      The data type to set the value to
@@ -316,12 +327,12 @@ public final class PlayerDataFetcher {
 
         if (currentValue.isEmpty()) return;
 
+        if (dataType == PlayerDataType.XP) {
+            handleXpUpdate(uuid, subtractValue, ModifyAction.SUBTRACT);
+            return;
+        }
         if (dataType == PlayerDataType.LEVEL) {
-            calculateLevelXpModification(uuid, subtractValue, ModifyAction.SUBTRACT).ifPresent(newValue -> {
-                dataCache.updateData(uuid, PlayerDataType.LEVEL, String.valueOf(LevelUtils.getLevelByXp(newValue)));
-                dataCache.updateData(uuid, PlayerDataType.XP, String.valueOf(newValue));
-                modifyByUUID(uuid, PlayerDataType.XP, newValue);
-            });
+            handleLevelUpdate(uuid, subtractValue, ModifyAction.SUBTRACT);
             return;
         }
 
@@ -649,7 +660,7 @@ public final class PlayerDataFetcher {
         }
         int currentXp = optCurrentXp.getAsInt();
         int currentLevel = LevelUtils.getLevelByXp(currentXp);
-        int newLevel = currentLevel;
+        int newLevel;
 
         // if action == SET, just use the given value
         if (action == ModifyAction.ADD) {
@@ -659,6 +670,9 @@ public final class PlayerDataFetcher {
             if (newLevel < 0) {
                 newLevel = 0;
             }
+            // if action == SET, just use the given value
+        } else {
+            newLevel = value;
         }
         int newThreshold = getThreshold(newLevel);
 
@@ -668,9 +682,52 @@ public final class PlayerDataFetcher {
     }
 
     /**
+     * Updates the level and xp data in cache on level update
+     * and modifies the data in the database
+     *
+     * @param uuid UUID of the Player
+     * @param value Value to modify the current value with
+     * @param action What action to modify the current value with (eg. add/remove)
+     */
+    private void handleLevelUpdate(UUID uuid, int value, ModifyAction action){
+        calculateLevelXpModification(uuid, value, action).ifPresent(newXpValue -> {
+            dataCache.updateData(uuid, PlayerDataType.LEVEL, String.valueOf(LevelUtils.getLevelByXp(newXpValue)));
+            modifyByUUID(uuid, PlayerDataType.XP, newXpValue);
+        });
+    }
+
+    /**
+     * Updates the level and xp data in cache on xp update
+     * and modifies the data in the database
+     *
+     * @param uuid UUID of the Player
+     * @param value Value to modify the current value with
+     * @param action What action to modify the current value with (eg. add/remove)
+     */
+    private void handleXpUpdate(UUID uuid, int value, ModifyAction action){
+        resolveIntData(uuid, PlayerDataType.XP).ifPresent(currentXp -> {
+            int newXp;
+
+            if (action == ModifyAction.ADD) {
+                newXp = currentXp + value;
+            } else if (action == ModifyAction.SUBTRACT) {
+                newXp = currentXp - value;
+                if (newXp < 0) {
+                    newXp = 0;
+                }
+                // if action == SET, just use the given value
+            } else {
+                newXp = value;
+            }
+            dataCache.updateData(uuid, PlayerDataType.LEVEL, String.valueOf(LevelUtils.getLevelByXp(newXp)));
+            modifyByUUID(uuid, PlayerDataType.XP, newXp);
+        });
+    }
+
+    /**
      * Action to do with the current value
      */
     private enum ModifyAction {
-        ADD, SUBTRACT
+        ADD, SUBTRACT, SET
     }
 }
