@@ -27,7 +27,7 @@ public final class PlayerActivityFetcher {
 
     /**
      * Gets the player's activity by his uuid and returns the result
-     * as new list of Activities, which is saved in the callback. This
+     * as new list of Activities, which is saved in the future. This
      * whole operation is run async.
      *
      * @param uuid     UUID of Player to get the activity for
@@ -60,7 +60,7 @@ public final class PlayerActivityFetcher {
     }
 
     /**
-     * Returns only one Activity with the matching id in async callback
+     * Returns only one Activity with the matching id in async future
      *
      * @param id       Given ID
      * @return Future where the result will be saved
