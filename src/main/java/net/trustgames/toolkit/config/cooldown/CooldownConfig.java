@@ -1,4 +1,4 @@
-package net.trustgames.toolkit.config;
+package net.trustgames.toolkit.config.cooldown;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
