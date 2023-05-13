@@ -69,7 +69,7 @@ public final class HikariManager {
                             onDataSourceInitialized(callback);
                         } catch (InterruptedException e) {
                             System.out.println("RUNTIME EXCEPTION 10");
-                            throw new RuntimeException("Exception occurred while sleeping the HikariCP data source initialization thread", e);
+                            logger.log(Level.SEVERE, "Exception occurred while sleeping the HikariCP data source initialization thread", e);
                         }
                     }
                 })

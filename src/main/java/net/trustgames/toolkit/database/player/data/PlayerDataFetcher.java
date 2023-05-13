@@ -68,7 +68,8 @@ public final class PlayerDataFetcher {
                 return Optional.empty();
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Exception occurred while getting " + dataType.getColumnName() + " data type from the database by UUID " + uuid, e);
+            logger.log(Level.SEVERE, "Exception occurred while getting " + dataType.getColumnName() + " data type from the database by UUID " + uuid, e);
+            return Optional.empty();
         }
     }
 
@@ -96,7 +97,8 @@ public final class PlayerDataFetcher {
                 return Optional.empty();
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Exception occurred while getting " + dataType.getColumnName() + " data type from the database by name " + playerName, e);
+            logger.log(Level.SEVERE, "Exception occurred while getting " + dataType.getColumnName() + " data type from the database by name " + playerName, e);
+            return Optional.empty();
         }
     }
 
@@ -129,7 +131,7 @@ public final class PlayerDataFetcher {
             dataCache.updateData(uuid, dataType, newValue.toString());
             new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
         } catch (SQLException e) {
-            throw new RuntimeException("Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by UUID " + uuid, e);
+            logger.log(Level.SEVERE, "Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by UUID " + uuid, e);
         }
     }
 
@@ -161,7 +163,7 @@ public final class PlayerDataFetcher {
                 new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
             });
         } catch (SQLException e) {
-            throw new RuntimeException("Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by name " + playerName, e);
+            logger.log(Level.SEVERE, "Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by name " + playerName, e);
         }
     }
 
@@ -208,7 +210,7 @@ public final class PlayerDataFetcher {
             // TODO different event (all update)
             // new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
         } catch (SQLException e) {
-            throw new RuntimeException("Exception occurred while modifying all player data type in the database by UUID " + uuid, e);
+            logger.log(Level.SEVERE, "Exception occurred while modifying all player data type in the database by UUID " + uuid, e);
         }
     }
 

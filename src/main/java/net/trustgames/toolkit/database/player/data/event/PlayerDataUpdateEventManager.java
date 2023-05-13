@@ -1,6 +1,7 @@
 package net.trustgames.toolkit.database.player.data.event;
 
 import com.rabbitmq.client.Channel;
+import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.managers.rabbit.RabbitManager;
 import net.trustgames.toolkit.managers.rabbit.config.RabbitExchange;
@@ -10,11 +11,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PlayerDataUpdateEventManager {
     protected static final Set<PlayerDataUpdateListener> registeredListeners = Collections.synchronizedSet(new HashSet<>());
 
     private final RabbitManager rabbitManager;
+    private final Logger logger = Toolkit.getLogger();
 
     /**
      * Handles the registration, un-registration of listeners
@@ -57,7 +61,8 @@ public class PlayerDataUpdateEventManager {
             channel.queueBind(queue, exchange.getName(), exchange.getRoutingKey());
         } catch (IOException e) {
             System.out.println("RUNTIME EXCEPTION 21");
-            throw new RuntimeException("Exception occurred while creating consumer queue for exchange " + exchange.getName(), e);
+            logger.log(Level.SEVERE, "Exception occurred while creating consumer queue for exchange " + exchange.getName(), e);
+            return;
         }
         rabbitManager.onDelivery(queue, jsonObject -> {
             PlayerDataUpdateEvent event = new PlayerDataUpdateEvent(rabbitManager,

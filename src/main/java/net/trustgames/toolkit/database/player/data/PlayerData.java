@@ -91,7 +91,8 @@ public class PlayerData {
             }
         } catch (SQLException e) {
             System.out.println("RUNTIME EXCEPTION 22");
-            throw new RuntimeException("Exception occurred while getting PlayerData object by UUID " + uuid, e);
+            Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid, e);
+            return Optional.empty();
         }
     }
 }

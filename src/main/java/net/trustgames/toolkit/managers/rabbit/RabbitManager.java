@@ -106,7 +106,7 @@ public final class RabbitManager {
             }
         } catch (IOException e) {
             System.out.println("RUNTIME EXCEPTION 23");
-            throw new RuntimeException("Error occurred while trying to publish message to exchange " + exchange.getName(), e);
+            logger.log(Level.SEVERE, "Error occurred while trying to publish message to exchange " + exchange.getName(), e);
         }
     }
 
@@ -150,7 +150,7 @@ public final class RabbitManager {
             });
         } catch (IOException e) {
             System.out.println("RUNTIME EXCEPTION 15");
-            throw new RuntimeException("Error occurred while trying to consume messages from Queue " + queueName, e);
+            logger.log(Level.SEVERE, "Error occurred while trying to consume messages from Queue " + queueName, e);
         }
     }
 
@@ -169,7 +169,7 @@ public final class RabbitManager {
                             onChannelInitialized(callback);
                         } catch (InterruptedException e) {
                             System.out.println("RUNTIME EXCEPTION 16");
-                            throw new RuntimeException("Exception occurred while sleeping the RabbitMQ channel initialization thread", e);
+                            logger.log(Level.SEVERE, "Exception occurred while sleeping the RabbitMQ channel initialization thread", e);
                         }
                     }
                 }).orTimeout(10L, TimeUnit.SECONDS)
@@ -198,7 +198,7 @@ public final class RabbitManager {
                 channel.close();
             } catch (TimeoutException | IOException e) {
                 System.out.println("RUNTIME EXCEPTION 18");
-                throw new RuntimeException("Exception occurred while trying to close RabbitMQ channel", e);
+                logger.log(Level.SEVERE, "Exception occurred while trying to close RabbitMQ channel", e);
             }
         }
         if (connection != null) {
@@ -206,7 +206,7 @@ public final class RabbitManager {
                 connection.close();
             } catch (IOException e) {
                 System.out.println("RUNTIME EXCEPTION 19");
-                throw new RuntimeException("Exception occurred while trying to close RabbitMQ channel", e);
+                logger.log(Level.SEVERE, "Exception occurred while trying to close RabbitMQ channel", e);
             }
         }
         factory = null;
