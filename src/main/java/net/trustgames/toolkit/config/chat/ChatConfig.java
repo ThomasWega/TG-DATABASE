@@ -2,6 +2,7 @@ package net.trustgames.toolkit.config.chat;
 
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -10,10 +11,10 @@ import org.jetbrains.annotations.NotNull;
 
 public enum ChatConfig {
     PREFIX("<color:#00adc4>Chat | </color>"),
-    CHAT_COLOR("&f"),
-    NAME_COLOR("&e"),
+    CHAT_COLOR("<white>"),
+    NAME_COLOR("<yellow>"),
     ALLOW_COLORS_PERM(PermissionConfig.KNIGHT.getPermission()),
-    MENTION_COLOR("&a"),
+    MENTION_COLOR("<green>"),
     ON_COOLDOWN(PREFIX.value + "<dark_gray>Wait another <component> seconds before using chat again!"),
     ON_SAME_COOLDOWN(PREFIX.value + "<dark_gray>Don't write the same message twice! (wait <component> seconds)"),
     MENTION_ACTIONBAR("<gray><player_name> mentioned you");
@@ -30,6 +31,13 @@ public enum ChatConfig {
      */
     public final Component getFormatted() {
         return MiniMessage.miniMessage().deserialize(value);
+    }
+
+    /**
+     * @return The color the Component from String Enum value will have after formatting
+     */
+    public final TextColor getColor() {
+        return getFormatted().color();
     }
 
     /**
