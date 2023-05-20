@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 public final class Toolkit {
 
     @Getter
-    private static final Logger logger = Logger.getLogger("Toolkit");
+    private static final Logger logger = Logger.getLogger("TG-Toolkit");
     @Getter
     @Setter
     private HikariManager hikariManager = null;
@@ -39,7 +39,7 @@ public final class Toolkit {
             rabbitManager.close();
 
         if (jedisPool != null) {
-            Toolkit.getLogger().warning("Jedis activity connections: " + jedisPool.getNumActive());
+            Toolkit.getLogger().info("Jedis activity connections: " + jedisPool.getNumActive());
             jedisPool.destroy();
         }
     }

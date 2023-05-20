@@ -449,16 +449,22 @@ public final class PlayerDataFetcher {
     public Optional<UUID> resolveUUID(@NotNull String playerName) {
         System.out.println("UUID");
         Optional<UUID> optCachedUuid = dataCache.getUUID(playerName);
+        System.out.println("SOMETHING IN THE CACHE? " + optCachedUuid);
         if (optCachedUuid.isEmpty()) {
             Optional<?> optDatabaseUuid = fetchByName(playerName, PlayerDataType.UUID);
+            System.out.println("SOMETHING IN THE DATABASE? " + optDatabaseUuid);
             if (optDatabaseUuid.isEmpty()) {
+                System.out.println("EMPTOS");
                 return Optional.empty();
             }
 
             Optional<UUID> databaseUuid = optDatabaseUuid.map(o -> UUID.fromString(o.toString()));
+            System.out.println("DATAB DATAB " + databaseUuid);
             dataCache.updateUUID(playerName, databaseUuid.get());
+            System.out.println("UPDAB");
             return databaseUuid;
         }
+        System.out.println("RERUNIK HERE " + optCachedUuid);
         return optCachedUuid;
     }
 
@@ -679,8 +685,8 @@ public final class PlayerDataFetcher {
         int newThreshold = getThreshold(newLevel);
 
         // calculate the progress towards the next level, to preserve the previous progress
-        float progress = getProgress(currentXp);
-        return OptionalInt.of(Math.round(newThreshold + ((getThreshold(newLevel + 1) - newThreshold) * progress)));
+        int progress = Math.round(newThreshold + ((getThreshold(newLevel + 1) - newThreshold) * getProgress(currentLevel)));
+        return OptionalInt.of(progress);
     }
 
     /**
