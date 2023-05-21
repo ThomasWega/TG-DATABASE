@@ -2,6 +2,8 @@ package net.trustgames.toolkit.database.player.data.config;
 
 import lombok.Getter;
 
+import java.util.Arrays;
+
 /**
 
  Stores all the PlayerData types and their column names
@@ -28,5 +30,12 @@ public enum PlayerDataType {
     PlayerDataType(String columnName, String columnType) {
         this.columnName = columnName;
         this.columnType = columnType;
+    }
+
+    public static PlayerDataType getByColumnName(String columnName){
+        return Arrays.stream(PlayerDataType.values())
+                .filter(dataType -> dataType.getColumnName().equals(columnName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Invalid columnName: " + columnName));
     }
 }

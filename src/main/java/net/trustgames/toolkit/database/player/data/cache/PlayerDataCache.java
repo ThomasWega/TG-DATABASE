@@ -8,10 +8,8 @@ import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class PlayerDataCache {
 
@@ -50,37 +48,33 @@ public class PlayerDataCache {
      * Get all the data from the cache
      *
      * @param uuid UUID of the Player
-     * @return Optional with PlayerData Object with filled in values or empty optional
+     * @return Optional with Strings of values or null
      */
-    public Optional<PlayerData> getAllData(@NotNull UUID uuid){
+    public Optional<HashMap<PlayerDataType, Optional<String>>> getAllData(@NotNull UUID uuid){
+        System.out.println("CACHE ALL DATA LUL");
         if (pool == null) {
             return Optional.empty();
         }
 
-        // todo all values need to be present to work
-        Map<PlayerDataType, String> data = new ConcurrentHashMap<>();
         try (Jedis jedis = pool.getResource()) {
-            for (PlayerDataType dataType : PlayerDataType.values()) {
-                String result = jedis.hget(uuid.toString(), dataType.getColumnName());
-                if (result == null) {
-                    return Optional.empty();
-                }
-                data.put(dataType, result);
-            }
+            String[] fields = Arrays.stream(PlayerDataType.values())
+                    .filter(dataType -> dataType != PlayerDataType.UUID)
+                    .map(PlayerDataType::getColumnName).toArray(String[]::new);
+            List<String> data = jedis.hmget(uuid.toString(), fields);
+
+            HashMap<PlayerDataType, Optional<String>> resultMap = Arrays.stream(fields)
+                    .collect(Collectors.toMap(
+                            PlayerDataType::getByColumnName,
+                            field -> Optional.ofNullable(data.get(Arrays.asList(fields).indexOf(field))),
+                            (v1, v2) -> v1,
+                            HashMap::new
+                    ));
+
             jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
+
+            System.out.println("CACHE ALL DATA MAP - " + resultMap);
+            return Optional.of(resultMap);
         }
-        return Optional.of(new PlayerData(
-                uuid,
-                data.get(PlayerDataType.NAME),
-                Integer.parseInt(data.get(PlayerDataType.KILLS)),
-                Integer.parseInt(data.get(PlayerDataType.DEATHS)),
-                Integer.parseInt(data.get(PlayerDataType.GAMES_PLAYED)),
-                Integer.parseInt(data.get(PlayerDataType.PLAYTIME)),
-                Integer.parseInt(data.get(PlayerDataType.XP)),
-                Integer.parseInt(data.get(PlayerDataType.LEVEL)),
-                Integer.parseInt(data.get(PlayerDataType.GEMS)),
-                Integer.parseInt(data.get(PlayerDataType.RUBIES))
-        ));
     }
 
     /**
@@ -122,6 +116,25 @@ public class PlayerDataCache {
         try (Jedis jedis = pool.getResource()) {
             String column = dataType.getColumnName();
             jedis.hset(uuid.toString(), column, value);
+            jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
+        }
+    }
+
+    /**
+     * Replace the multiple specified data types all at once in the cache with their given values
+     *
+     * @param uuid UUID of the player
+     * @param dataTypes Map of DataTypes and their values to set in cache
+     */
+    public void updateData(@NotNull UUID uuid,
+                           @NotNull Map<PlayerDataType, String> dataTypes) {
+        if (pool == null) return;
+
+        try (Jedis jedis = pool.getResource()) {
+            Map<String, String> labelMap = dataTypes.entrySet().stream()
+                    .collect(Collectors.toMap(entry -> entry.getKey().getColumnName(), Map.Entry::getValue));
+
+            jedis.hmset(uuid.toString(), labelMap);
             jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
         }
     }

@@ -1,5 +1,6 @@
 package net.trustgames.toolkit.database.player.data;
 
+import lombok.Getter;
 import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.database.player.data.cache.PlayerDataCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
@@ -13,12 +14,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName;
 import static net.trustgames.toolkit.utils.LevelUtils.getProgress;
@@ -45,19 +45,22 @@ public final class PlayerDataFetcher {
         this.dataCache = new PlayerDataCache(toolkit.getJedisPool());
     }
 
+
     /**
-     * Fetches a player's data by UUID and data type from the database synchronously.
+     * Fetches a player's data by Key from the database synchronously.
      *
-     * @param uuid     The UUID of the player.
+     * @param key Key to determine the row by
+     * @param keyValue The value of the key parameter
      * @param dataType The data type to fetch.
      * @return An Optional that contains the fetched data, or empty if the data is not found.
      */
-    private Optional<Object> fetchByUUID(@NotNull UUID uuid,
+    private Optional<Object> fetchByKey(@NotNull FetchKey key,
+                                         @NotNull String keyValue,
                                          @NotNull PlayerDataType dataType) {
         System.out.println("UUID FETCH");
         String label = dataType.getColumnName();
-        try (Connection connection = hikariManager.getConnection(); PreparedStatement statement = connection.prepareStatement("SELECT " + label + " FROM " + tableName + " WHERE " + PlayerDataType.UUID.getColumnName() + " = ?")) {
-            statement.setString(1, uuid.toString());
+        try (Connection connection = hikariManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(generateSQLQueryForFetch(key, keyValue, dataType))) {
             System.out.println("IDK HNSTLY");
             try (ResultSet results = statement.executeQuery()) {
                 if (results.next()) {
@@ -68,38 +71,90 @@ public final class PlayerDataFetcher {
                 return Optional.empty();
             }
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Exception occurred while getting " + dataType.getColumnName() + " data type from the database by UUID " + uuid, e);
+            logger.log(Level.SEVERE, "Exception occurred while getting " + dataType.getColumnName() + " data type from the database by " + key.getDataType().getColumnName() + keyValue, e);
             return Optional.empty();
         }
     }
 
     /**
-     * Fetches a player's data by name and data type from the database synchronously.
+     * Fetches a collection of player's data types by Key from the database synchronously.
      *
-     * @param playerName The name of the player.
-     * @param dataType   The data type to fetch.
-     * @return An Optional that contains the fetched data, or empty if the data is not found.
+     * @param key Key to determine the row by
+     * @param keyValue The value of the key parameter
+     * @param dataTypes  The collection of data types to fetch.
+     * @return A map containing the fetched data, where the keys are the data types and the values are the corresponding data objects.
      */
-    private Optional<Object> fetchByName(@NotNull String playerName,
-                                         @NotNull PlayerDataType dataType) {
-        System.out.println("NAME FETCH");
-        String label = dataType.getColumnName();
-        try (Connection connection = hikariManager.getConnection(); PreparedStatement statement = connection.prepareStatement("SELECT " + label + " FROM " + tableName + " WHERE " + PlayerDataType.NAME.getColumnName() + " = ?")) {
-            statement.setString(1, playerName);
-            System.out.println("WEELL");
+    private Map<PlayerDataType, Optional<Object>> fetchCollectionByKey(@NotNull FetchKey key,
+                                                                       @NotNull String keyValue,
+                                                                       @NotNull Collection<PlayerDataType> dataTypes) {
+        System.out.println("DATA TYPES FETCH - " + dataTypes);
+        Map<PlayerDataType, Optional<Object>> fetchedData = new HashMap<>();
+        try (Connection connection = hikariManager.getConnection(); PreparedStatement statement = connection.prepareStatement(generateSQLQueryForCollection(key, keyValue, dataTypes))) {
+            System.out.println("ONE TO THE ONE TO THE TWO");
             try (ResultSet results = statement.executeQuery()) {
                 if (results.next()) {
-                    Object object = results.getObject(label);
-                    System.out.println("HIHI!! :)");
-
-                    return Optional.of(object);
+                    for (PlayerDataType dataType : dataTypes){
+                        Object object = results.getObject(dataType.getColumnName());
+                        System.out.println("SOUT SOUT - " + object);
+                        fetchedData.put(dataType, Optional.ofNullable(object));
+                    }
                 }
-                return Optional.empty();
             }
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Exception occurred while getting " + dataType.getColumnName() + " data type from the database by name " + playerName, e);
-            return Optional.empty();
+            logger.log(Level.SEVERE, "Exception occurred while getting collection of " + dataTypes + " data types from the database by " + key.getDataType().getColumnName() + keyValue, e);
         }
+        return fetchedData;
+    }
+
+    /**
+     * Fetches a collection of player's data types by UUID from the database synchronously.
+     *
+     * @param key Key to determine the row by
+     * @param keyValue The value of the key parameter
+     * @param dataTypes  The collection of data types to fetch.
+     * @return A map containing the fetched data, where the keys are the data types and the values are the corresponding data objects.
+     */
+    Map<PlayerDataType, Optional<String>> resolveFetchCollectionByKey(@NotNull FetchKey key,
+                                                                      @NotNull String keyValue,
+                                                                      @NotNull Collection<PlayerDataType> dataTypes) {
+        // LEVEL cannot be explicitly fetched from database, so convert to XP for now
+        List<PlayerDataType> convertedLevelToXP = dataTypes.stream()
+                .map(dataType -> dataType == PlayerDataType.LEVEL ? PlayerDataType.XP : dataType)
+                .distinct()
+                .toList();
+
+        // collection values in Optional<Object> to Optional<String>
+        Map<PlayerDataType, Optional<String>> fetchedDataTypes = fetchCollectionByKey(key, keyValue, convertedLevelToXP)
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey, e -> e.getValue().map(Object::toString))
+                );
+
+        /*
+         if LEVEL is also supposed to be fetched, convert the XP to LEVEL
+         and add it to the map of fetched values
+        */
+        if (dataTypes.contains(PlayerDataType.LEVEL)) {
+            fetchedDataTypes.get(PlayerDataType.XP).ifPresent(string -> {
+                int level = LevelUtils.getLevelByXp(Integer.parseInt(string));
+                fetchedDataTypes.put(PlayerDataType.LEVEL, Optional.of(String.valueOf(level)));
+            });
+        }
+        return fetchedDataTypes;
+    }
+
+    /**
+     * @see PlayerDataFetcher#resolveFetchCollectionByKey(FetchKey, String, Collection)
+     */
+    CompletableFuture<Map<PlayerDataType, Optional<String>>> resolveFetchCollectionByKeyAsync(@NotNull FetchKey key,
+                                                                                              @NotNull String keyValue,
+                                                                                              @NotNull Collection<PlayerDataType> dataTypes) {
+        return CompletableFuture.supplyAsync(() -> resolveFetchCollectionByKey(key, keyValue, dataTypes))
+                .exceptionally(throwable -> {
+                    logger.log(Level.SEVERE, "Exception occurred while fetching collection of data types " + dataTypes + " by " + key.getDataType().getColumnName() + keyValue + " async", throwable);
+                    return null;
+                });
     }
 
     /**
@@ -114,12 +169,8 @@ public final class PlayerDataFetcher {
                               @NotNull PlayerDataType dataType,
                               @NotNull Object newValue) {
         System.out.println("MODIFY :P -- " + dataType.name());
-        String label = dataType.getColumnName();
         try (Connection connection = hikariManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     "INSERT INTO " + tableName + "(" + PlayerDataType.UUID.getColumnName() + ", " + label + ") " +
-                             "VALUES (?, ?) " + "ON DUPLICATE KEY UPDATE " + label + " = VALUES(" + label + ")")
-        ) {
+             PreparedStatement statement = connection.prepareStatement(generateSQLQueryForModify(dataType))) {
             System.out.println("MODIFY OH?");
             connection.setAutoCommit(false);
             statement.setString(1, uuid.toString());
@@ -132,85 +183,6 @@ public final class PlayerDataFetcher {
             new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by UUID " + uuid, e);
-        }
-    }
-
-    /**
-     * Inserts the specified data identified by the name to the database.
-     * If the key is already present, it updates it
-     *
-     * @param playerName Name of the player
-     * @param dataType   The data type to modify
-     * @param newValue   Value to set the data type to
-     */
-    private void modifyByName(@NotNull String playerName,
-                              @NotNull PlayerDataType dataType,
-                              @NotNull Object newValue) {
-        System.out.println("MODIFY :P -- " + dataType.name());
-        String label = dataType.getColumnName();
-        System.out.println("INSERT INTO " + tableName + "(" + PlayerDataType.UUID.getColumnName() + ", " + label + ") " + "VALUES ( " + playerName + ", " + newValue + ") " + "ON DUPLICATE KEY UPDATE " + label + " = VALUES(" + label + ")");
-        try (Connection connection = hikariManager.getConnection(); PreparedStatement statement = connection.prepareStatement("INSERT INTO " + tableName + "(" + PlayerDataType.NAME.getColumnName() + ", " + label + ") " + "VALUES (?, ?) " + "ON DUPLICATE KEY UPDATE " + label + " = VALUES(" + label + ")")) {
-            System.out.println("MODIFY OH?");
-            connection.setAutoCommit(false);
-            statement.setString(1, playerName);
-            statement.setObject(2, newValue);
-            statement.executeUpdate();
-            connection.commit();
-
-            System.out.println("MODIFY SO WHAT IS - " + newValue);
-            resolveUUID(playerName).ifPresent(uuid -> {
-                dataCache.updateData(uuid, dataType, newValue.toString());
-                new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
-            });
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by name " + playerName, e);
-        }
-    }
-
-    /**
-     * Inserts all the data identified by the uuid to the database.
-     * If the key is already present, it updates it
-     *
-     * @param uuid       UUID of the player
-     * @param playerData with all filled in dataTypes!
-     */
-    private void modifyAllData(@NotNull UUID uuid,
-                               @NotNull PlayerData playerData) {
-        try (Connection connection = hikariManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     "INSERT INTO " + tableName + "(" + PlayerDataType.UUID.getColumnName() +
-                             ", " + PlayerDataType.NAME.getColumnName() + ", " + PlayerDataType.KILLS.getColumnName() +
-                             ", " + PlayerDataType.DEATHS.getColumnName() + ", " + PlayerDataType.GAMES_PLAYED.getColumnName() +
-                             ", " + PlayerDataType.PLAYTIME.getColumnName() + ", " + PlayerDataType.XP.getColumnName() +
-                             ", " + PlayerDataType.GEMS.getColumnName() + ", " + PlayerDataType.RUBIES.getColumnName() +
-                             ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE " +
-                             PlayerDataType.NAME.getColumnName() + " = VALUES(" + PlayerDataType.NAME.getColumnName() + "), " +
-                             PlayerDataType.KILLS.getColumnName() + " = VALUES(" + PlayerDataType.KILLS.getColumnName() + "), " +
-                             PlayerDataType.DEATHS.getColumnName() + " = VALUES(" + PlayerDataType.DEATHS.getColumnName() + "), " +
-                             PlayerDataType.GAMES_PLAYED.getColumnName() + " = VALUES(" + PlayerDataType.GAMES_PLAYED.getColumnName() + "), " +
-                             PlayerDataType.PLAYTIME.getColumnName() + " = VALUES(" + PlayerDataType.PLAYTIME.getColumnName() + "), " +
-                             PlayerDataType.XP.getColumnName() + " = VALUES(" + PlayerDataType.XP.getColumnName() + "), " +
-                             PlayerDataType.GEMS.getColumnName() + " = VALUES(" + PlayerDataType.GEMS.getColumnName() + "), " +
-                             PlayerDataType.RUBIES.getColumnName() + " = VALUES(" + PlayerDataType.RUBIES.getColumnName() + ");")) {
-            connection.setAutoCommit(false);
-            statement.setString(1, uuid.toString());
-            statement.setString(2, playerData.getName());
-            statement.setInt(3, playerData.getKills());
-            statement.setInt(4, playerData.getDeaths());
-            statement.setInt(5, playerData.getGamesPlayed());
-            statement.setInt(6, playerData.getPlaytimeSeconds());
-            statement.setInt(7, playerData.getXp());
-            statement.setInt(8, playerData.getGems());
-            statement.setInt(9, playerData.getRubies());
-            statement.executeUpdate();
-            connection.commit();
-
-            dataCache.updateAllData(uuid, playerData);
-
-            // TODO different event (all update)
-            // new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Exception occurred while modifying all player data type in the database by UUID " + uuid, e);
         }
     }
 
@@ -451,7 +423,7 @@ public final class PlayerDataFetcher {
         Optional<UUID> optCachedUuid = dataCache.getUUID(playerName);
         System.out.println("SOMETHING IN THE CACHE? " + optCachedUuid);
         if (optCachedUuid.isEmpty()) {
-            Optional<?> optDatabaseUuid = fetchByName(playerName, PlayerDataType.UUID);
+            Optional<?> optDatabaseUuid = fetchByKey(FetchKey.NAME, playerName, PlayerDataType.UUID);
             System.out.println("SOMETHING IN THE DATABASE? " + optDatabaseUuid);
             if (optDatabaseUuid.isEmpty()) {
                 System.out.println("EMPTOS");
@@ -498,13 +470,13 @@ public final class PlayerDataFetcher {
             System.out.println("NO CACHE KAŠe?");
             if (dataType == PlayerDataType.LEVEL) {
                 Optional<Integer> levelData = convertXpToLevels(
-                        fetchByUUID(uuid, PlayerDataType.XP)
+                        fetchByKey(FetchKey.UUID, uuid.toString(), PlayerDataType.XP)
                                 .map(o -> Integer.parseInt(o.toString()))
                 );
                 levelData.ifPresent(level -> dataCache.updateData(uuid, dataType, String.valueOf(level)));
                 return levelData;
             }
-            Optional<Object> optDatabaseData = fetchByUUID(uuid, dataType);
+            Optional<Object> optDatabaseData = fetchByKey(FetchKey.UUID, uuid.toString(), dataType);
             System.out.println("DATAB - " + optDatabaseData);
             optDatabaseData.ifPresent(data -> dataCache.updateData(uuid, dataType, data.toString()));
             return optDatabaseData;
@@ -733,9 +705,96 @@ public final class PlayerDataFetcher {
     }
 
     /**
+     * Generates the SQL statement based on the given data types.
+     *
+     * @param key Key to determine the row by
+     * @param keyValue The value of the key parameter
+     * @param dataTypes The collection of data types
+     * @return The generated SQL statement
+     */
+    private String generateSQLQueryForCollection(FetchKey key,
+                                                 String keyValue,
+                                                 Collection<PlayerDataType> dataTypes) {
+        StringBuilder queryBuilder = new StringBuilder("SELECT ");
+        List<String> labels = dataTypes.stream()
+                .map(PlayerDataType::getColumnName)
+                .toList();
+
+        queryBuilder.append(String.join(", ", labels));
+        queryBuilder.append(" FROM ").append(tableName);
+        queryBuilder.append(" WHERE ").append(key.getDataType().getColumnName()).append(" = \"").append(keyValue).append("\"");
+
+        System.out.println("SQL QUERY = " + queryBuilder);
+        return queryBuilder.toString();
+    }
+
+    /**
+     * Generates the SQL statement based on the given values
+     *
+     * @param fetchKey Key to determine the row by
+     * @param keyValue The value of the key parameter
+     * @param dataType Data type to fetch
+     * @return SQL statement
+     */
+    private String generateSQLQueryForFetch(FetchKey fetchKey, String keyValue,  PlayerDataType dataType) {
+        return "SELECT " + dataType.getColumnName() + " FROM " + tableName + " WHERE " + fetchKey.getDataType().getColumnName() + " = \"" + keyValue + "\"";
+    }
+
+    /**
+     * Generates the SQL statement to modify data type by UUID
+     *
+     * @param dataType Data type to modify
+     * @return SQL statement
+     */
+    private String generateSQLQueryForModify(PlayerDataType dataType){
+        String label = dataType.getColumnName();
+        return "INSERT INTO " + tableName + "(" + PlayerDataType.UUID.getColumnName() + ", " + label + ") " +
+                "VALUES (?, ?) " + "ON DUPLICATE KEY UPDATE " + label + " = VALUES(" + label + ")";
+    }
+
+    /**
+     * Generates the SQL statement to modify all data types by UUID
+     *
+     * @return SQL statement
+     */
+    private String generateSQLQueryForModifyAll() {
+        List<PlayerDataType> dataTypes = Arrays.stream(PlayerDataType.values())
+                .filter(dataType -> dataType.getColumnType() != null)
+                .toList();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("INSERT INTO ").append(tableName).append("(");
+        dataTypes.forEach(dataType -> sb.append(dataType.getColumnName()).append(", "));
+        sb.setLength(sb.length() - 2); // Remove the extra comma and space
+        sb.append(") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE ");
+        dataTypes.forEach(dataType ->
+                sb.append(dataType.getColumnName()).append(" = VALUES(").append(dataType.getColumnName()).append("), ")
+        );
+        sb.setLength(sb.length() - 2); // Remove the extra comma and space
+        sb.append(";");
+
+        return sb.toString();
+    }
+
+    /**
      * Action to do with the current value
      */
     private enum ModifyAction {
         ADD, SUBTRACT, SET
+    }
+
+    /**
+     * Type of key to fetch the value by
+     */
+    enum FetchKey {
+        UUID(PlayerDataType.UUID),
+        NAME(PlayerDataType.NAME);
+
+        @Getter
+        private final PlayerDataType dataType;
+
+        FetchKey(PlayerDataType dataType) {
+            this.dataType = dataType;
+        }
     }
 }

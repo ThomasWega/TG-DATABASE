@@ -12,10 +12,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName;
 
@@ -40,32 +40,99 @@ public class PlayerData {
                                                                              @NotNull UUID uuid) {
         return CompletableFuture.supplyAsync(() -> getPlayerData(toolkit, uuid))
                 .exceptionally(throwable -> {
-                    Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid +" async", throwable);
+                    Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid + " async", throwable);
                     return Optional.empty();
                 });
     }
 
     /**
      * Tries to get all the data for the player from the cache.
-     * In case that fails, it tries to get the data from the database.
+     * In case any data wasn't in the cache, it gets it from the database.
      * Then converts everything into new PlayerData object with filled in values.
      *
      * @param toolkit instance of Toolkit
-     * @param uuid UUID of the player
+     * @param uuid    UUID of the player
      * @return Optional with PlayerData with filled in values or empty
      */
     public static Optional<PlayerData> getPlayerData(@NotNull Toolkit toolkit,
                                                      @NotNull UUID uuid) {
-        System.out.println("DATA HAH");
+        System.out.println("GET PLAYER DATA :))");
         PlayerDataCache dataCache = new PlayerDataCache(toolkit.getJedisPool());
-        System.out.println("HHH");
-        Optional<PlayerData> cachedOptData = dataCache.getAllData(uuid);
-        System.out.println("CACHED - " + cachedOptData);
-        if (cachedOptData.isPresent())
-            return cachedOptData;
+        Optional<HashMap<PlayerDataType, Optional<String>>> cachedOptData = dataCache.getAllData(uuid);
+        System.out.println("CACHED PLAYER DATA - " + cachedOptData);
+        if (cachedOptData.isPresent()) {
+            Map<PlayerDataType, Optional<String>> cachedData = cachedOptData.get();
 
-        // no data in cache
-        System.out.println("DATABASE NOW");
+            // PlayerDataTypes which have empty value
+            List<PlayerDataType> missingDataTypeValues = cachedData.entrySet().stream()
+                    .filter(entry -> entry.getValue().isEmpty())
+                    .map(Map.Entry::getKey)
+                    .toList();
+
+            System.out.println("MISSING PLAYER DATA - " + missingDataTypeValues);
+
+            // if none values are missing, that means all the data was successfully retrived from the cache
+            if (missingDataTypeValues.isEmpty()) {
+                System.out.println("FROM KAŠE");
+                return Optional.of(initializePlayerDataFromHashMap(uuid, cachedData));
+            } else {
+                // get the missing DataTypes values
+                Map<PlayerDataType, Optional<String>> databaseOptData = new PlayerDataFetcher(toolkit).resolveFetchCollectionByKey(PlayerDataFetcher.FetchKey.UUID, uuid.toString(), missingDataTypeValues);
+
+                // means the missing data types values are not even in the database
+                if (databaseOptData.isEmpty())
+                    return Optional.empty();
+
+                // Present values of the missing DataTypes, which can be updated in the cache
+                Map<PlayerDataType, String> cacheUpdateData = databaseOptData.entrySet()
+                        .stream()
+                        .filter(entry -> entry.getValue().isPresent())
+                        .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().get()));
+                dataCache.updateData(uuid, cacheUpdateData);
+
+                System.out.println("DATABASE MAPPED PLAYER DATA - " + databaseOptData);
+
+                // merge the retrieved data from cache (if any is there) and database
+                Map<PlayerDataType, Optional<String>> finalMap = new HashMap<>(databaseOptData);
+                if (!cachedData.isEmpty()){
+                    finalMap.putAll(cachedData);
+                }
+                finalMap.putAll(databaseOptData);
+
+                System.out.println("FINAL MAP MERGED - " + finalMap);
+                System.out.println("FROM MERGED");
+                return Optional.of(initializePlayerDataFromHashMap(uuid, finalMap));
+            }
+        } else {
+            System.out.println("FROM DAB");
+            return getAllDataFromDatabase(toolkit, uuid);
+        }
+    }
+
+    /**
+     * create a new PlayerData object from the supplied Map
+     */
+    private static PlayerData initializePlayerDataFromHashMap(UUID uuid,
+                                                              Map<PlayerDataType, Optional<String>> finalMap) {
+        return new PlayerData(
+                uuid,
+                finalMap.get(PlayerDataType.NAME).orElse("UNKNOWN"),
+                Integer.parseInt(finalMap.get(PlayerDataType.KILLS).orElse("0")),
+                Integer.parseInt(finalMap.get(PlayerDataType.DEATHS).orElse("0")),
+                Integer.parseInt(finalMap.get(PlayerDataType.GAMES_PLAYED).orElse("0")),
+                Integer.parseInt(finalMap.get(PlayerDataType.PLAYTIME).orElse("0")),
+                Integer.parseInt(finalMap.get(PlayerDataType.XP).orElse("0")),
+                Integer.parseInt(finalMap.get(PlayerDataType.LEVEL).orElse("0")),
+                Integer.parseInt(finalMap.get(PlayerDataType.GEMS).orElse("0")),
+                Integer.parseInt(finalMap.get(PlayerDataType.RUBIES).orElse("0"))
+        );
+    }
+
+    /**
+     * Retrieve all the data for the PlayerData object from the database
+     */
+    private static Optional<PlayerData> getAllDataFromDatabase(Toolkit toolkit, UUID uuid) {
+        PlayerDataCache dataCache = new PlayerDataCache(toolkit.getJedisPool());
         try (Connection connection = toolkit.getHikariManager().getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT * FROM " + tableName + " WHERE uuid = ?")) {
             statement.setString(1, uuid.toString());
@@ -83,7 +150,6 @@ public class PlayerData {
                             rs.getInt(PlayerDataType.GEMS.getColumnName()),
                             rs.getInt(PlayerDataType.RUBIES.getColumnName())
                     );
-                    System.out.println("OK UPDATE?");
                     dataCache.updateAllData(uuid, playerData);
                     return Optional.of(playerData);
                 }
