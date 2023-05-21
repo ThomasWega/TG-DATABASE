@@ -640,25 +640,29 @@ public final class PlayerDataFetcher {
         }
         int currentXp = optCurrentXp.getAsInt();
         int currentLevel = LevelUtils.getLevelByXp(currentXp);
-        int newLevel;
+        int futureLevel;
 
         // if action == SET, just use the given value
         if (action == ModifyAction.ADD) {
-            newLevel = currentLevel + value;
+            futureLevel = currentLevel + value;
         } else if (action == ModifyAction.SUBTRACT) {
-            newLevel = currentLevel - value;
-            if (newLevel < 0) {
-                newLevel = 0;
+            futureLevel = currentLevel - value;
+            if (futureLevel < 0) {
+                futureLevel = 0;
             }
             // if action == SET, just use the given value
         } else {
-            newLevel = value;
+            futureLevel = value;
         }
-        int newThreshold = getThreshold(newLevel);
+        int levelWithoutProgress = getThreshold(futureLevel);
+
+        if (action == ModifyAction.SET){
+            return OptionalInt.of(levelWithoutProgress);
+        }
 
         // calculate the progress towards the next level, to preserve the previous progress
-        int progress = Math.round(newThreshold + ((getThreshold(newLevel + 1) - newThreshold) * getProgress(currentLevel)));
-        return OptionalInt.of(progress);
+        int levelWithProgress = Math.round(levelWithoutProgress + ((getThreshold(futureLevel + 1) - levelWithoutProgress) * getProgress(currentLevel)));
+        return OptionalInt.of(levelWithProgress);
     }
 
     /**
