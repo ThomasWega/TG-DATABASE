@@ -1,6 +1,6 @@
 package net.trustgames.toolkit.database.player.activity;
 
-import net.trustgames.toolkit.managers.HikariManager;
+import net.trustgames.toolkit.managers.database.HikariManager;
 import org.jetbrains.annotations.NotNull;
 
 /**

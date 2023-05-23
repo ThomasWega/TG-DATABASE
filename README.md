@@ -22,11 +22,10 @@ Common usage util for TrustGames.net plugins
 - Player Data update event
 - Player Data object
 - Resolving of Player Data (first cache, then database) + updating
+- Cooldown Manager
 - HikariCP pool Manager
 - RabbitMQ manager
 - Level conversion Util
 - Number conversion/verify Util
 - UUID conversion/verify Util
-
-
 
