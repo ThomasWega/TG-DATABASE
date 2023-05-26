@@ -10,6 +10,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class handles the basic MariaDB and HikariCP methods such as getting connection,
@@ -17,6 +19,8 @@ import java.util.concurrent.TimeUnit;
  * plugin#getLogger is used instead of Bukkit#getLogger, because async methods should not access Bukkit API
  */
 public final class HikariManager {
+
+    private static final Logger logger = Toolkit.getLogger();
     private static HikariDataSource dataSource;
 
     /**
@@ -65,13 +69,13 @@ public final class HikariManager {
                             onDataSourceInitialized(callback);
                         } catch (InterruptedException e) {
                             System.out.println("RUNTIME EXCEPTION 10");
-                            Toolkit.LOGGER.info("Exception occurred while sleeping the HikariCP data source initialization thread", e);
+                            logger.log(Level.SEVERE, "Exception occurred while sleeping the HikariCP data source initialization thread", e);
                         }
                     }
                 })
                 .orTimeout(10L, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
-                    Toolkit.LOGGER.error("HikariCP data source initialization timed out!", throwable);
+                    logger.log(Level.SEVERE, "HikariCP data source initialization timed out!", throwable);
                     return null;
                 });
     }
@@ -103,13 +107,13 @@ public final class HikariManager {
                     }
                 })
                 .exceptionally(throwable -> {
-                    Toolkit.LOGGER.error("Exception occurred while trying to create missing " + tableName + " table in the database", throwable);
+                    logger.log(Level.SEVERE, "Exception occurred while trying to create missing " + tableName + " table in the database", throwable);
                     return null;
                 });
     }
 
     public void close() {
-        Toolkit.LOGGER.info("HikariCP activity connections: {}", dataSource.getHikariPoolMXBean().getActiveConnections());
+        Toolkit.getLogger().info("HikariCP activity connections: " + dataSource.getHikariPoolMXBean().getActiveConnections());
         dataSource.close();
     }
 }

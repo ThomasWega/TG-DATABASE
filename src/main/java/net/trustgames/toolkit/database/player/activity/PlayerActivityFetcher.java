@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 import static net.trustgames.toolkit.database.player.activity.PlayerActivityDB.tableName;
 
@@ -52,7 +53,7 @@ public final class PlayerActivityFetcher {
                 }
             } catch (SQLException e) {
                 System.out.println("RUNTIME EXCEPTION 2");
-                Toolkit.LOGGER.error("Exception occurred while fetching PlayerActivity from the database by UUID " + uuid +" async", e);
+                Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while fetching PlayerActivity from the database by UUID " + uuid +" async", e);
                 throw new RuntimeException("While fetching Activity of player with UUID " + uuid + " from the database", e);
             }
         });
@@ -82,7 +83,7 @@ public final class PlayerActivityFetcher {
                     return Optional.empty();
                 }
             } catch (SQLException e) {
-                Toolkit.LOGGER.error("Exception occurred while fetching PlayerActivity.Activity from the database by ID " + id +" async", e);
+                Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while fetching PlayerActivity.Activity from the database by ID " + id +" async", e);
                 throw new RuntimeException("While fetching Activity of ID " + id + " from the database async", e);
             }
         });
@@ -117,7 +118,7 @@ public final class PlayerActivityFetcher {
                 throw new RuntimeException("Inserting player activity with id " + activity.getId() + " into database async", e);
             }
         }).exceptionally(throwable -> {
-            Toolkit.LOGGER.error("Exception occurred while inserting new PlayerActivity.Activity to the database async", throwable);
+            Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while inserting new PlayerActivity.Activity to the database async", throwable);
             return null;
         });
     }

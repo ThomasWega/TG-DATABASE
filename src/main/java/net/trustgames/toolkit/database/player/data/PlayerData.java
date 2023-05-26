@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName;
@@ -39,7 +40,7 @@ public class PlayerData {
                                                                              @NotNull UUID uuid) {
         return CompletableFuture.supplyAsync(() -> getPlayerData(toolkit, uuid))
                 .exceptionally(throwable -> {
-                    Toolkit.LOGGER.error("Exception occurred while getting PlayerData object by UUID " + uuid + " async", throwable);
+                    Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid + " async", throwable);
                     return Optional.empty();
                 });
     }
@@ -156,7 +157,7 @@ public class PlayerData {
             }
         } catch (SQLException e) {
             System.out.println("RUNTIME EXCEPTION 22");
-            Toolkit.LOGGER.error("Exception occurred while getting PlayerData object by UUID " + uuid, e);
+            Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid, e);
             return Optional.empty();
         }
     }
