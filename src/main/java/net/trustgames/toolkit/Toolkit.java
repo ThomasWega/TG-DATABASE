@@ -2,6 +2,7 @@ package net.trustgames.toolkit;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.serializer.ComponentSerializer;
 import net.trustgames.toolkit.managers.database.HikariManager;
 import net.trustgames.toolkit.managers.message_queue.RabbitManager;
 import org.jetbrains.annotations.Nullable;

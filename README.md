@@ -28,4 +28,6 @@ Common usage util for TrustGames.net plugins
 - Level conversion Util
 - Number conversion/verify Util
 - UUID conversion/verify Util
+- Color conversion Util
+- Component conversion Util
 
