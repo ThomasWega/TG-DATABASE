@@ -17,6 +17,8 @@ public enum ChatConfig {
     MENTION_COLOR("<green>"),
     ON_COOLDOWN(PREFIX.value + "<dark_gray>Wait another <component> seconds before using chat again!"),
     ON_SAME_COOLDOWN(PREFIX.value + "<dark_gray>Don't write the same message twice! (wait <component> seconds)"),
+    ON_SWEAR(PREFIX.value + "<dark_gray>Please keep the chat friendly :)"),
+    ON_ADVERTISEMENT(PREFIX.value + "<dark_gray>Please don't advertise any website outside of TrustGames.net domain"),
     MENTION_ACTIONBAR("<gray><player_name> mentioned you");
 
     @Getter

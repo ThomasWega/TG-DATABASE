@@ -30,7 +30,7 @@ public final class PlayerActivityFetcher {
      * as new list of Activities, which is saved in the future. This
      * whole operation is run async.
      *
-     * @param uuid     UUID of Player to get the activity for
+     * @param uuid UUID of Player to get the activity for
      * @return Future where the result will be saved
      */
     public CompletableFuture<Optional<PlayerActivity>> fetchByUUID(@NotNull UUID uuid) {
@@ -53,7 +53,7 @@ public final class PlayerActivityFetcher {
                 }
             } catch (SQLException e) {
                 System.out.println("RUNTIME EXCEPTION 2");
-                Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while fetching PlayerActivity from the database by UUID " + uuid +" async", e);
+                Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while fetching PlayerActivity from the database by UUID " + uuid + " async", e);
                 throw new RuntimeException("While fetching Activity of player with UUID " + uuid + " from the database", e);
             }
         });
@@ -62,7 +62,7 @@ public final class PlayerActivityFetcher {
     /**
      * Returns only one Activity with the matching id in async future
      *
-     * @param id       Given ID
+     * @param id Given ID
      * @return Future where the result will be saved
      */
     public CompletableFuture<Optional<PlayerActivity.Activity>> fetchByID(long id) {
@@ -83,7 +83,7 @@ public final class PlayerActivityFetcher {
                     return Optional.empty();
                 }
             } catch (SQLException e) {
-                Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while fetching PlayerActivity.Activity from the database by ID " + id +" async", e);
+                Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while fetching PlayerActivity.Activity from the database by ID " + id + " async", e);
                 throw new RuntimeException("While fetching Activity of ID " + id + " from the database async", e);
             }
         });
@@ -92,34 +92,28 @@ public final class PlayerActivityFetcher {
     /**
      * creates a new row with the new player activity.
      * values from playerActivity are set for each index
-     * (is run async)
      *
      * @param activity Only one Activity with the corresponding data
      */
-    public void insertNew(PlayerActivity.@NotNull Activity activity) {
-        CompletableFuture.runAsync(() -> {
-            try (Connection connection = hikariManager.getConnection()) {
-                String query = "INSERT INTO " + tableName + " (uuid, ip, action, time) VALUES (?, ?, ?, ?)";
-                try (PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-                    statement.setString(1, activity.getUuid().toString());
-                    statement.setString(2, activity.getIp());
-                    statement.setString(3, activity.getAction());
-                    statement.setTimestamp(4, activity.getTime());
-                    statement.executeUpdate();
-                    try (ResultSet result = statement.getGeneratedKeys()) {
-                        if (result.next()) {
-                            long id = result.getLong(1);
-                            activity.setId(id);
-                        }
+    public void insertNewAction(PlayerActivity.@NotNull Activity activity) {
+        try (Connection connection = hikariManager.getConnection()) {
+            String query = "INSERT INTO " + tableName + " (uuid, ip, action, time) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+                statement.setString(1, activity.getUuid().toString());
+                statement.setString(2, activity.getIp());
+                statement.setString(3, activity.getAction());
+                statement.setTimestamp(4, activity.getTime());
+                statement.executeUpdate();
+                try (ResultSet result = statement.getGeneratedKeys()) {
+                    if (result.next()) {
+                        long id = result.getLong(1);
+                        activity.setId(id);
                     }
                 }
-            } catch (SQLException e) {
-                System.out.println("RUNTIME EXCEPTION 20");
-                throw new RuntimeException("Inserting player activity with id " + activity.getId() + " into database async", e);
             }
-        }).exceptionally(throwable -> {
-            Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while inserting new PlayerActivity.Activity to the database async", throwable);
-            return null;
-        });
+        } catch (SQLException e) {
+            System.out.println("RUNTIME EXCEPTION 20");
+            throw new RuntimeException("Inserting player activity with id " + activity.getId() + " into database async", e);
+        }
     }
 }
