@@ -30,6 +30,7 @@ public class PlayerData {
     private int playtimeSeconds;
     private int xp;
     private int level;
+    private float levelProgress;
     private int gems;
     private int rubies;
 
@@ -46,6 +47,18 @@ public class PlayerData {
     }
 
     /**
+     * @see PlayerData#getPlayerData(Toolkit, String)
+     */
+    public static CompletableFuture<Optional<PlayerData>> getPlayerDataAsync(@NotNull Toolkit toolkit,
+                                                                             @NotNull String playerName) {
+        return CompletableFuture.supplyAsync(() -> getPlayerData(toolkit, playerName))
+                .exceptionally(throwable -> {
+                    Toolkit.LOGGER.log(Level.SEVERE, "Exception occurred while getting PlayerData object by name " + playerName + " async", throwable);
+                    return Optional.empty();
+                });
+    }
+
+    /**
      * Tries to get all the data for the player from the cache.
      * In case any data wasn't in the cache, it gets it from the database.
      * Then converts everything into new PlayerData object with filled in values.
@@ -53,6 +66,7 @@ public class PlayerData {
      * @param toolkit instance of Toolkit
      * @param uuid    UUID of the player
      * @return Optional with PlayerData with filled in values or empty
+     * @see PlayerData#getPlayerData(Toolkit, String)
      */
     public static Optional<PlayerData> getPlayerData(@NotNull Toolkit toolkit,
                                                      @NotNull UUID uuid) {
@@ -110,6 +124,25 @@ public class PlayerData {
     }
 
     /**
+     * First tries to get the UUID of the player by his name
+     * from cache or if not present, from the database (done by method).
+     * Then it just calls the UUID PlayerData method
+     *
+     * @param toolkit instance of Toolkit
+     * @param playerName Name of the Player
+     * @return Optional with PlayerData with filled in values or empty
+     * @see PlayerData#getPlayerData(Toolkit, UUID)
+     */
+    public static Optional<PlayerData> getPlayerData(@NotNull Toolkit toolkit,
+                                                     @NotNull String playerName) {
+        Optional<UUID> optUUID = new PlayerDataFetcher(toolkit).resolveUUID(playerName);
+        if (optUUID.isEmpty()){
+            return Optional.empty();
+        }
+        return getPlayerData(toolkit, optUUID.get());
+    }
+
+    /**
      * create a new PlayerData object from the supplied Map
      */
     private static PlayerData initializePlayerDataFromHashMap(UUID uuid,
@@ -123,6 +156,7 @@ public class PlayerData {
                 Integer.parseInt(finalMap.get(PlayerDataType.PLAYTIME).orElse("0")),
                 Integer.parseInt(finalMap.get(PlayerDataType.XP).orElse("0")),
                 Integer.parseInt(finalMap.get(PlayerDataType.LEVEL).orElse("0")),
+                LevelUtils.getProgress(Integer.parseInt(finalMap.get(PlayerDataType.XP).orElse("0"))),
                 Integer.parseInt(finalMap.get(PlayerDataType.GEMS).orElse("0")),
                 Integer.parseInt(finalMap.get(PlayerDataType.RUBIES).orElse("0"))
         );
@@ -147,6 +181,7 @@ public class PlayerData {
                             rs.getInt(PlayerDataType.PLAYTIME.getColumnName()),
                             rs.getInt(PlayerDataType.XP.getColumnName()),
                             LevelUtils.getLevelByXp(rs.getInt(PlayerDataType.XP.getColumnName())),
+                            LevelUtils.getProgress(rs.getInt(PlayerDataType.XP.getColumnName())),
                             rs.getInt(PlayerDataType.GEMS.getColumnName()),
                             rs.getInt(PlayerDataType.RUBIES.getColumnName())
                     );
