@@ -1,5 +1,6 @@
 package net.trustgames.toolkit.filter;
 
+import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.managers.file.FileLoader;
 
 import java.io.BufferedReader;
@@ -22,7 +23,7 @@ public class ProfanityList {
     public static HashSet<String> loadSet(File dir) {
         String fileName = "profanity.txt";
         try {
-            File file = FileLoader.loadFile(dir, fileName);
+            File file = FileLoader.loadFile(Toolkit.class.getClassLoader(), dir, fileName);
 
             BufferedReader reader = new BufferedReader(new FileReader(file));
             HashSet<String> hashSet = new HashSet<>(reader.lines().collect(Collectors.toUnmodifiableSet()));

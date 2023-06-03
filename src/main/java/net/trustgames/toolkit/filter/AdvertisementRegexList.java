@@ -1,5 +1,6 @@
 package net.trustgames.toolkit.filter;
 
+import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.managers.file.FileLoader;
 
 import java.io.BufferedReader;
@@ -23,7 +24,7 @@ public class AdvertisementRegexList {
     public static HashSet<Pattern> loadSet(File dir) {
         String fileName = "ads-regex.txt";
         try {
-            File file = FileLoader.loadFile(dir, fileName);
+            File file = FileLoader.loadFile(Toolkit.class.getClassLoader(), dir, fileName);
 
             BufferedReader reader = new BufferedReader(new FileReader(file));
             HashSet<Pattern> patternSet = new HashSet<>(reader.lines()
