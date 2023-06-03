@@ -5,6 +5,10 @@ import net.trustgames.toolkit.Toolkit;
 
 public class PlaceholderManager {
 
+    /**
+     * @param toolkit instance of Toolkit
+     * @return Builder with registered placeholders
+     */
     public static Expansion.Builder createPlaceholders(Toolkit toolkit) {
         return Expansion.builder("tg")
                 //   .filter(Player.class)
