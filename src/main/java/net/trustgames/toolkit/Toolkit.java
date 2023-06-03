@@ -2,7 +2,6 @@ package net.trustgames.toolkit;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.kyori.adventure.text.serializer.ComponentSerializer;
 import net.trustgames.toolkit.managers.database.HikariManager;
 import net.trustgames.toolkit.managers.message_queue.RabbitManager;
 import org.jetbrains.annotations.Nullable;
@@ -11,9 +10,7 @@ import redis.clients.jedis.JedisPool;
 import java.util.logging.Logger;
 
 public final class Toolkit {
-
-    @Getter
-    private static final Logger logger = Logger.getLogger("TG-Toolkit");
+    public static final Logger LOGGER = Logger.getLogger("TG-Toolkit");
     @Getter
     @Setter
     private HikariManager hikariManager = null;
@@ -40,7 +37,7 @@ public final class Toolkit {
             rabbitManager.close();
 
         if (jedisPool != null) {
-            Toolkit.getLogger().info("Jedis activity connections: " + jedisPool.getNumActive());
+            LOGGER.info("Jedis activity connections: " + jedisPool.getNumActive());
             jedisPool.destroy();
         }
     }

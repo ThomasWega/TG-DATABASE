@@ -18,7 +18,7 @@ public class PlayerDataUpdateEventManager {
     protected static final Set<PlayerDataUpdateListener> registeredListeners = Collections.synchronizedSet(new HashSet<>());
 
     private final RabbitManager rabbitManager;
-    private final Logger logger = Toolkit.getLogger();
+    private final Logger LOGGER = Toolkit.LOGGER;
 
     /**
      * Handles the registration, un-registration of listeners
@@ -61,7 +61,7 @@ public class PlayerDataUpdateEventManager {
             channel.queueBind(queue, exchange.getName(), exchange.getRoutingKey());
         } catch (IOException e) {
             System.out.println("RUNTIME EXCEPTION 21");
-            logger.log(Level.SEVERE, "Exception occurred while creating consumer queue for exchange " + exchange.getName(), e);
+            LOGGER.log(Level.SEVERE, "Exception occurred while creating consumer queue for exchange " + exchange.getName(), e);
             return;
         }
         rabbitManager.onDelivery(queue, jsonObject -> {

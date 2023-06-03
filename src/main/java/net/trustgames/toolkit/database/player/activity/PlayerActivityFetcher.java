@@ -53,7 +53,7 @@ public final class PlayerActivityFetcher {
                 }
             } catch (SQLException e) {
                 System.out.println("RUNTIME EXCEPTION 2");
-                Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while fetching PlayerActivity from the database by UUID " + uuid + " async", e);
+                Toolkit.LOGGER.log(Level.SEVERE, "Exception occurred while fetching PlayerActivity from the database by UUID " + uuid + " async", e);
                 throw new RuntimeException("While fetching Activity of player with UUID " + uuid + " from the database", e);
             }
         });
@@ -83,7 +83,7 @@ public final class PlayerActivityFetcher {
                     return Optional.empty();
                 }
             } catch (SQLException e) {
-                Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while fetching PlayerActivity.Activity from the database by ID " + id + " async", e);
+                Toolkit.LOGGER.log(Level.SEVERE, "Exception occurred while fetching PlayerActivity.Activity from the database by ID " + id + " async", e);
                 throw new RuntimeException("While fetching Activity of ID " + id + " from the database async", e);
             }
         });

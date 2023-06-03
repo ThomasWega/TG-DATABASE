@@ -26,7 +26,7 @@ public final class RabbitManager {
     @Getter
     private final Channel channel;
 
-    private final Logger logger = Toolkit.getLogger();
+    private final Logger LOGGER = Toolkit.LOGGER;
 
     /**
      * Sets parameters and creates new channel and queue.
@@ -106,7 +106,7 @@ public final class RabbitManager {
             }
         } catch (IOException e) {
             System.out.println("RUNTIME EXCEPTION 23");
-            logger.log(Level.SEVERE, "Error occurred while trying to publish message to exchange " + exchange.getName(), e);
+            LOGGER.log(Level.SEVERE, "Error occurred while trying to publish message to exchange " + exchange.getName(), e);
         }
     }
 
@@ -124,7 +124,7 @@ public final class RabbitManager {
                                    @NotNull JSONObject json) {
         CompletableFuture.runAsync(() -> fireAndForget(exchange, properties, json))
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "Exception occurred while trying to publish message to exchange " + exchange.getName() + " async in RabbitMQ", throwable);
+                    LOGGER.log(Level.SEVERE, "Exception occurred while trying to publish message to exchange " + exchange.getName() + " async in RabbitMQ", throwable);
                     return null;
                 });
     }
@@ -150,7 +150,7 @@ public final class RabbitManager {
             });
         } catch (IOException e) {
             System.out.println("RUNTIME EXCEPTION 15");
-            logger.log(Level.SEVERE, "Error occurred while trying to consume messages from Queue " + queueName, e);
+            LOGGER.log(Level.SEVERE, "Error occurred while trying to consume messages from Queue " + queueName, e);
         }
     }
 
@@ -169,12 +169,12 @@ public final class RabbitManager {
                             onChannelInitialized(callback);
                         } catch (InterruptedException e) {
                             System.out.println("RUNTIME EXCEPTION 16");
-                            logger.log(Level.SEVERE, "Exception occurred while sleeping the RabbitMQ channel initialization thread", e);
+                            LOGGER.log(Level.SEVERE, "Exception occurred while sleeping the RabbitMQ channel initialization thread", e);
                         }
                     }
                 }).orTimeout(10L, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "RabbitMQ channel initialization timed out!", throwable);
+                    LOGGER.log(Level.SEVERE, "RabbitMQ channel initialization timed out!", throwable);
                     return null;
                 });
     }
@@ -198,7 +198,7 @@ public final class RabbitManager {
                 channel.close();
             } catch (TimeoutException | IOException e) {
                 System.out.println("RUNTIME EXCEPTION 18");
-                logger.log(Level.SEVERE, "Exception occurred while trying to close RabbitMQ channel", e);
+                LOGGER.log(Level.SEVERE, "Exception occurred while trying to close RabbitMQ channel", e);
             }
         }
         if (connection != null) {
@@ -206,7 +206,7 @@ public final class RabbitManager {
                 connection.close();
             } catch (IOException e) {
                 System.out.println("RUNTIME EXCEPTION 19");
-                logger.log(Level.SEVERE, "Exception occurred while trying to close RabbitMQ channel", e);
+                LOGGER.log(Level.SEVERE, "Exception occurred while trying to close RabbitMQ channel", e);
             }
         }
         factory = null;

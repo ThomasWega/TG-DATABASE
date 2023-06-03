@@ -40,7 +40,7 @@ public class PlayerData {
                                                                              @NotNull UUID uuid) {
         return CompletableFuture.supplyAsync(() -> getPlayerData(toolkit, uuid))
                 .exceptionally(throwable -> {
-                    Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid + " async", throwable);
+                    Toolkit.LOGGER.log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid + " async", throwable);
                     return Optional.empty();
                 });
     }
@@ -157,7 +157,7 @@ public class PlayerData {
             }
         } catch (SQLException e) {
             System.out.println("RUNTIME EXCEPTION 22");
-            Toolkit.getLogger().log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid, e);
+            Toolkit.LOGGER.log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid, e);
             return Optional.empty();
         }
     }

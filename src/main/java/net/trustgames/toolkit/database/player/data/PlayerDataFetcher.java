@@ -30,7 +30,7 @@ public final class PlayerDataFetcher {
     private final RabbitManager rabbitManager;
     private final PlayerDataCache dataCache;
 
-    private final Logger logger = Toolkit.getLogger();
+    private final Logger LOGGER = Toolkit.LOGGER;
 
     /**
      * Handles the fetching data types, from the cache,
@@ -71,7 +71,7 @@ public final class PlayerDataFetcher {
                 return Optional.empty();
             }
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Exception occurred while getting " + dataType.getColumnName() + " data type from the database by " + key.getDataType().getColumnName() + keyValue, e);
+            LOGGER.log(Level.SEVERE, "Exception occurred while getting " + dataType.getColumnName() + " data type from the database by " + key.getDataType().getColumnName() + keyValue, e);
             return Optional.empty();
         }
     }
@@ -101,7 +101,7 @@ public final class PlayerDataFetcher {
                 }
             }
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Exception occurred while getting collection of " + dataTypes + " data types from the database by " + key.getDataType().getColumnName() + keyValue, e);
+            LOGGER.log(Level.SEVERE, "Exception occurred while getting collection of " + dataTypes + " data types from the database by " + key.getDataType().getColumnName() + keyValue, e);
         }
         return fetchedData;
     }
@@ -152,7 +152,7 @@ public final class PlayerDataFetcher {
                                                                                               @NotNull Collection<PlayerDataType> dataTypes) {
         return CompletableFuture.supplyAsync(() -> resolveFetchCollectionByKey(key, keyValue, dataTypes))
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "Exception occurred while fetching collection of data types " + dataTypes + " by " + key.getDataType().getColumnName() + keyValue + " async", throwable);
+                    LOGGER.log(Level.SEVERE, "Exception occurred while fetching collection of data types " + dataTypes + " by " + key.getDataType().getColumnName() + keyValue + " async", throwable);
                     return null;
                 });
     }
@@ -182,7 +182,7 @@ public final class PlayerDataFetcher {
             dataCache.updateData(uuid, dataType, newValue.toString());
             new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by UUID " + uuid, e);
+            LOGGER.log(Level.SEVERE, "Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by UUID " + uuid, e);
         }
     }
 
@@ -336,7 +336,7 @@ public final class PlayerDataFetcher {
                              @NotNull Object newValue) {
         CompletableFuture.runAsync(() -> setData(uuid, dataType, newValue))
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "Exception occurred while setting player data by UUID " + uuid + " async", throwable);
+                    LOGGER.log(Level.SEVERE, "Exception occurred while setting player data by UUID " + uuid + " async", throwable);
                     return null;
                 });
     }
@@ -350,7 +350,7 @@ public final class PlayerDataFetcher {
                              @NotNull Object newValue) {
         CompletableFuture.runAsync(() -> setData(playerName, dataType, newValue))
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "Exception occurred while setting player data by name " + playerName + " async", throwable);
+                    LOGGER.log(Level.SEVERE, "Exception occurred while setting player data by name " + playerName + " async", throwable);
                     return null;
                 });
     }
@@ -364,7 +364,7 @@ public final class PlayerDataFetcher {
                              int addValue) {
         CompletableFuture.runAsync(() -> addData(uuid, dataType, addValue))
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "Exception occurred while adding player data by UUID " + uuid + " async", throwable);
+                    LOGGER.log(Level.SEVERE, "Exception occurred while adding player data by UUID " + uuid + " async", throwable);
                     return null;
                 });
     }
@@ -378,7 +378,7 @@ public final class PlayerDataFetcher {
                              int addValue) {
         CompletableFuture.runAsync(() -> addData(playerName, dataType, addValue))
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "Exception occurred while adding player data by name " + playerName + " async", throwable);
+                    LOGGER.log(Level.SEVERE, "Exception occurred while adding player data by name " + playerName + " async", throwable);
                     return null;
                 });
     }
@@ -392,7 +392,7 @@ public final class PlayerDataFetcher {
                                   int subtractValue) {
         CompletableFuture.runAsync(() -> subtractData(uuid, dataType, subtractValue))
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "Exception occurred while subtracting player data by UUID " + uuid + " async", throwable);
+                    LOGGER.log(Level.SEVERE, "Exception occurred while subtracting player data by UUID " + uuid + " async", throwable);
                     return null;
                 });
     }
@@ -406,7 +406,7 @@ public final class PlayerDataFetcher {
                                   int subtractValue) {
         CompletableFuture.runAsync(() -> subtractData(playerName, dataType, subtractValue))
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "Exception occurred while subtracting player data by name " + playerName + " async", throwable);
+                    LOGGER.log(Level.SEVERE, "Exception occurred while subtracting player data by name " + playerName + " async", throwable);
                     return null;
                 });
     }
@@ -447,7 +447,7 @@ public final class PlayerDataFetcher {
     public CompletableFuture<Optional<UUID>> resolveUUIDAsync(@NotNull String playerName) {
         return CompletableFuture.supplyAsync(() -> resolveUUID(playerName))
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "Exception occurred while resolving player UUID by name " + playerName + " async", throwable);
+                    LOGGER.log(Level.SEVERE, "Exception occurred while resolving player UUID by name " + playerName + " async", throwable);
                     return Optional.empty();
                 });
     }
@@ -510,7 +510,7 @@ public final class PlayerDataFetcher {
         return CompletableFuture.supplyAsync(() -> resolveData(uuid, dataType))
                 .handle((result, exception) -> {
                     if (exception != null) {
-                        logger.log(Level.SEVERE, "Exception occurred while resolving player data by UUID " + uuid + " async", exception);
+                        LOGGER.log(Level.SEVERE, "Exception occurred while resolving player data by UUID " + uuid + " async", exception);
                         return Optional.empty();
                     } else {
                         return result;
@@ -524,7 +524,7 @@ public final class PlayerDataFetcher {
         return CompletableFuture.supplyAsync(() -> resolveData(playerName, dataType))
                 .handle((result, exception) -> {
                     if (exception != null) {
-                        logger.log(Level.SEVERE, "Exception occurred while resolving player data by name " + playerName + " async", exception);
+                        LOGGER.log(Level.SEVERE, "Exception occurred while resolving player data by name " + playerName + " async", exception);
                         return Optional.empty();
                     } else {
                         return result;
@@ -579,7 +579,7 @@ public final class PlayerDataFetcher {
         return CompletableFuture.supplyAsync(() -> resolveIntData(uuid, dataType))
                 .handle((result, exception) -> {
                     if (exception != null) {
-                        logger.log(Level.SEVERE, "Exception occurred while resolving player int data by UUID " + uuid + " async", exception);
+                        LOGGER.log(Level.SEVERE, "Exception occurred while resolving player int data by UUID " + uuid + " async", exception);
                         return OptionalInt.empty();
                     } else {
                         return result;
@@ -595,7 +595,7 @@ public final class PlayerDataFetcher {
         return CompletableFuture.supplyAsync(() -> resolveIntData(playerName, dataType))
                 .handle((result, exception) -> {
                     if (exception != null) {
-                        logger.log(Level.SEVERE, "Exception occurred while resolving player int data by name " + playerName + " async", exception);
+                        LOGGER.log(Level.SEVERE, "Exception occurred while resolving player int data by name " + playerName + " async", exception);
                         return OptionalInt.empty();
                     } else {
                         return result;

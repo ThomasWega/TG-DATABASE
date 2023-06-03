@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 public final class HikariManager {
 
-    private static final Logger logger = Toolkit.getLogger();
+    private static final Logger LOGGER = Toolkit.LOGGER;
     private static HikariDataSource dataSource;
 
     /**
@@ -69,13 +69,13 @@ public final class HikariManager {
                             onDataSourceInitialized(callback);
                         } catch (InterruptedException e) {
                             System.out.println("RUNTIME EXCEPTION 10");
-                            logger.log(Level.SEVERE, "Exception occurred while sleeping the HikariCP data source initialization thread", e);
+                            LOGGER.log(Level.SEVERE, "Exception occurred while sleeping the HikariCP data source initialization thread", e);
                         }
                     }
                 })
                 .orTimeout(10L, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "HikariCP data source initialization timed out!", throwable);
+                    LOGGER.log(Level.SEVERE, "HikariCP data source initialization timed out!", throwable);
                     return null;
                 });
     }
@@ -107,13 +107,13 @@ public final class HikariManager {
                     }
                 })
                 .exceptionally(throwable -> {
-                    logger.log(Level.SEVERE, "Exception occurred while trying to create missing " + tableName + " table in the database", throwable);
+                    LOGGER.log(Level.SEVERE, "Exception occurred while trying to create missing " + tableName + " table in the database", throwable);
                     return null;
                 });
     }
 
     public void close() {
-        Toolkit.getLogger().info("HikariCP activity connections: " + dataSource.getHikariPoolMXBean().getActiveConnections());
+        Toolkit.LOGGER.info("HikariCP activity connections: " + dataSource.getHikariPoolMXBean().getActiveConnections());
         dataSource.close();
     }
 }
