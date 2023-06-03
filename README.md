@@ -25,6 +25,8 @@ Common usage util for TrustGames.net plugins
 - Cooldown Manager
 - HikariCP pool Manager
 - RabbitMQ manager
+- SkinData Object (texture, signature)
+- SkinFetcher (from mojang-api)
 - Level conversion Util
 - Number conversion/verify Util
 - UUID conversion/verify Util
