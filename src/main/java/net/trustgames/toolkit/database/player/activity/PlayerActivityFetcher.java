@@ -2,6 +2,7 @@ package net.trustgames.toolkit.database.player.activity;
 
 import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.database.HikariManager;
+import net.trustgames.toolkit.database.player.activity.config.PlayerAction;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
@@ -43,7 +44,7 @@ public final class PlayerActivityFetcher {
                     while (results.next()) {
                         long id = results.getLong("id");
                         String ip = results.getString("ip");
-                        String action = results.getString("action");
+                        PlayerAction action = PlayerAction.valueOf(results.getString("action"));
                         Timestamp time = results.getTimestamp("time");
                         activities.add(new PlayerActivity.Activity(id, uuid, ip, action, time));
                     }
@@ -75,7 +76,7 @@ public final class PlayerActivityFetcher {
                         long resultId = results.getLong("id");
                         UUID uuid = UUID.fromString(results.getString("uuid"));
                         String ip = results.getString("ip");
-                        String action = results.getString("action");
+                        PlayerAction action = PlayerAction.valueOf(results.getString("action"));
                         Timestamp time = results.getTimestamp("time");
                         PlayerActivity.Activity activity = new PlayerActivity.Activity(resultId, uuid, ip, action, time);
                         return Optional.of(activity);
@@ -101,7 +102,7 @@ public final class PlayerActivityFetcher {
             try (PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
                 statement.setString(1, activity.getUuid().toString());
                 statement.setString(2, activity.getIp());
-                statement.setString(3, activity.getAction());
+                statement.setString(3, activity.getAction().getActionString());
                 statement.setTimestamp(4, activity.getTime());
                 statement.executeUpdate();
                 try (ResultSet result = statement.getGeneratedKeys()) {

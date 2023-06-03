@@ -3,6 +3,7 @@ package net.trustgames.toolkit.database.player.activity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import net.trustgames.toolkit.database.player.activity.config.PlayerAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,7 +33,7 @@ public final class PlayerActivity {
      */
     public void add(long id,
                     @Nullable String ip,
-                    @NotNull String action,
+                    @NotNull PlayerAction action,
                     @NotNull Timestamp time) {
         activities.add(new Activity(id, uuid, ip, action, time));
     }
@@ -48,13 +49,13 @@ public final class PlayerActivity {
         @Nullable
         private String ip;
         @NotNull
-        private String action;
+        private PlayerAction action;
         @NotNull
         private Timestamp time;
 
         public Activity(@NotNull UUID uuid,
                         @Nullable String ip,
-                        @NotNull String action,
+                        @NotNull PlayerAction action,
                         @NotNull Timestamp time) {
             this.id = -1; // set the id to -1 since it's not known yet
             this.uuid = uuid;
