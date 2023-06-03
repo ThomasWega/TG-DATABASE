@@ -5,5 +5,5 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Stores the texture and signature data of given skin
  */
-public record SkinData(@Nullable String texture, @Nullable String signature) {
+public record Skin(@Nullable String texture, @Nullable String signature) {
 }

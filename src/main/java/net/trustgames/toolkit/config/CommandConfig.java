@@ -20,8 +20,8 @@ public enum CommandConfig {
     COMMAND_INVALID_VALUE(PREFIX.value + "<red>Invalid value <white><component><red>!"),
     COMMAND_PLAYER_OFFLINE(PREFIX.value + "<dark_gray>The player <white><component><dark_gray> isn't online on this server!"),
     COMMAND_PLAYER_UNKNOWN(PREFIX.value + "<dark_gray>The player <white><component><dark_gray> never joined the network!"),
-    COMMAND_NO_PLAYER_DATA(PREFIX_DB.value + "<dark_gray>No data for player <white><component>"),
-    COMMAND_NO_ID_DATA(PREFIX_DB.value + "<dark_gray>No data for ID <white><component>");
+    COMMAND_NO_DATA_PLAYER(PREFIX_DB.value + "<dark_gray>No data for player <white><component>"),
+    COMMAND_NO_DATA_ID(PREFIX_DB.value + "<dark_gray>No data for ID <white><component>");
 
 
     private final Object value;

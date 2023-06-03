@@ -83,8 +83,7 @@ public class PlayerDataCache {
      * @param playerName Name of the player
      * @return UUID of the player or empty
      */
-    public Optional<UUID> getUUID(@Nullable String playerName) {
-
+    public Optional<UUID> getUUID(@NotNull String playerName) {
         if (pool == null) {
             return Optional.empty();
         }
