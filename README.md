@@ -32,4 +32,6 @@ Common usage util for TrustGames.net plugins
 - UUID conversion/verify Util
 - Color conversion Util
 - Component conversion Util
+- Placeholders (MiniPlaceholders)
+
 
