@@ -2,8 +2,8 @@ package net.trustgames.toolkit;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.trustgames.toolkit.managers.database.HikariManager;
-import net.trustgames.toolkit.managers.message_queue.RabbitManager;
+import net.trustgames.toolkit.database.HikariManager;
+import net.trustgames.toolkit.message_queue.RabbitManager;
 import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.JedisPool;
 

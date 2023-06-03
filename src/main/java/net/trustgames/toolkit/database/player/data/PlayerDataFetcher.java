@@ -5,8 +5,8 @@ import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.database.player.data.cache.PlayerDataCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.database.player.data.event.PlayerDataUpdateEvent;
-import net.trustgames.toolkit.managers.database.HikariManager;
-import net.trustgames.toolkit.managers.message_queue.RabbitManager;
+import net.trustgames.toolkit.database.HikariManager;
+import net.trustgames.toolkit.message_queue.RabbitManager;
 import net.trustgames.toolkit.utils.LevelUtils;
 import org.jetbrains.annotations.NotNull;
 

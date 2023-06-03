@@ -1,11 +1,11 @@
-package net.trustgames.toolkit.managers.cooldown;
+package net.trustgames.toolkit.cooldown;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class CooldownManager {
+public final class UUIDCooldown {
 
     private final ConcurrentHashMap<UUID, Long> commandCooldownTime = new ConcurrentHashMap<>();
 
@@ -32,7 +32,7 @@ public final class CooldownManager {
 
     /**
      * @param uuid   UUID of the Player to check cooldown on
-     * @param cooldownTime CooldownManager time in seconds
+     * @param cooldownTime UUIDCooldown time in seconds
      * @return if player is on cooldown
      */
     private boolean checkCooldown(@NotNull UUID uuid, double cooldownTime) {

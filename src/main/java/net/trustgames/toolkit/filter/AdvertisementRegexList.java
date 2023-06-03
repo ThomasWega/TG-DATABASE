@@ -1,7 +1,7 @@
 package net.trustgames.toolkit.filter;
 
 import net.trustgames.toolkit.Toolkit;
-import net.trustgames.toolkit.managers.file.FileLoader;
+import net.trustgames.toolkit.file.FileLoader;
 
 import java.io.BufferedReader;
 import java.io.File;

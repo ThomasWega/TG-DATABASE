@@ -1,4 +1,4 @@
-package net.trustgames.toolkit.managers.permission;
+package net.trustgames.toolkit.luckperms;
 
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;

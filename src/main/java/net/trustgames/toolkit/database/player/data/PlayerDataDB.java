@@ -2,7 +2,7 @@ package net.trustgames.toolkit.database.player.data;
 
 
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
-import net.trustgames.toolkit.managers.database.HikariManager;
+import net.trustgames.toolkit.database.HikariManager;
 
 import java.util.Arrays;
 

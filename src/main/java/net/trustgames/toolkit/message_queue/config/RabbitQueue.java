@@ -1,4 +1,4 @@
-package net.trustgames.toolkit.managers.message_queue.config;
+package net.trustgames.toolkit.message_queue.config;
 
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;

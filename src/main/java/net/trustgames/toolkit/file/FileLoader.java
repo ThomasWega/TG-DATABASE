@@ -1,4 +1,4 @@
-package net.trustgames.toolkit.managers.file;
+package net.trustgames.toolkit.file;
 
 import java.io.File;
 import java.io.IOException;

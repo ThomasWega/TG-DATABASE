@@ -1,4 +1,4 @@
-package net.trustgames.toolkit.managers.database;
+package net.trustgames.toolkit.database;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

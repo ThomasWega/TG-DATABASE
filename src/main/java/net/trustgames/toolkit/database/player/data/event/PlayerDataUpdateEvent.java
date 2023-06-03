@@ -3,8 +3,8 @@ package net.trustgames.toolkit.database.player.data.event;
 import com.rabbitmq.client.AMQP;
 import lombok.Getter;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
-import net.trustgames.toolkit.managers.message_queue.RabbitManager;
-import net.trustgames.toolkit.managers.message_queue.config.RabbitExchange;
+import net.trustgames.toolkit.message_queue.RabbitManager;
+import net.trustgames.toolkit.message_queue.config.RabbitExchange;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 

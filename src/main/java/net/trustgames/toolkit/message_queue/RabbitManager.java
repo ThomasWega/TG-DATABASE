@@ -1,10 +1,10 @@
-package net.trustgames.toolkit.managers.message_queue;
+package net.trustgames.toolkit.message_queue;
 
 import com.rabbitmq.client.*;
 import lombok.Getter;
 import net.trustgames.toolkit.Toolkit;
-import net.trustgames.toolkit.managers.message_queue.config.RabbitExchange;
-import net.trustgames.toolkit.managers.message_queue.config.RabbitQueue;
+import net.trustgames.toolkit.message_queue.config.RabbitExchange;
+import net.trustgames.toolkit.message_queue.config.RabbitQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
