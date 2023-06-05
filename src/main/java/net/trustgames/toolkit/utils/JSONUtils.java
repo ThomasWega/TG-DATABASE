@@ -9,6 +9,8 @@ import org.json.JSONObject;
  */
 public class JSONUtils {
 
+    private JSONUtils() {}
+
     /**
      * All data will be preserved (colors, events, ...)
      *

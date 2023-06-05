@@ -2,6 +2,8 @@ package net.trustgames.toolkit.utils;
 
 public class NumberUtils {
 
+    private NumberUtils() {}
+
     public static boolean isNumeric(String str) {
         try {
             Double.parseDouble(str);

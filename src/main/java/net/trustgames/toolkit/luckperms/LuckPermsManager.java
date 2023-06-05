@@ -14,6 +14,8 @@ import java.util.*;
  */
 public final class LuckPermsManager {
 
+    private LuckPermsManager() {}
+
     /**
      * @param user User to check permission for
      * @param permission Permission to check for

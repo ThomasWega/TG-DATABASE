@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class ColorUtils {
 
+    private ColorUtils() {}
+
     /**
      * Translates the colors of the given Component text
      * and returns the colored text. Supports both normal colors

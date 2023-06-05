@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class ComponentUtils {
 
+    private ComponentUtils() {}
+
     /**
      * Converts the Component to String.
      * Will preserve only color codes

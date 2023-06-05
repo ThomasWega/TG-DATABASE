@@ -2,6 +2,8 @@ package net.trustgames.toolkit.utils;
 
 public final class LevelUtils {
 
+    private LevelUtils() {}
+
     /**
      * Get the progress from 0.0 to 1.0 that
      * the player has towards the next level.

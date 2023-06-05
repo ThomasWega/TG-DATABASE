@@ -6,6 +6,8 @@ import java.util.UUID;
 
 public final class UUIDUtils {
 
+    private UUIDUtils() {}
+
     public static boolean isValidUUID(@Nullable String uuidString) {
         boolean valid = false;
         try {
