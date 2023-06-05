@@ -1,5 +1,6 @@
 package net.trustgames.toolkit.config;
 
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -9,7 +10,6 @@ public enum CommandConfig {
     PREFIX("<color:#2472f0>Command | </color>"),
     PREFIX_DB("<color:#ed7168>Internal | </color>"),
     PREFIX_MQ("<color:#edc168>Internal | </color>"),
-    MAX_PER_SEC(6),
     COMMAND_NO_PERM(PREFIX.value + "<dark_gray>You don't have permission to perform this action!"),
     COMMAND_DATABASE_OFF(PREFIX_DB.value + "<dark_gray>Database is disabled!"),
     COMMAND_MESSAGE_QUEUE_OFF(PREFIX_MQ.value + "<dark_gray>Message Queue is disabled!"),
@@ -23,33 +23,18 @@ public enum CommandConfig {
     COMMAND_NO_DATA_PLAYER(PREFIX_DB.value + "<dark_gray>No data for player <white><component>"),
     COMMAND_NO_DATA_ID(PREFIX_DB.value + "<dark_gray>No data for ID <white><component>");
 
+    @Getter
+    private final String value;
 
-    private final Object value;
-
-
-    CommandConfig(Object value) {
+    CommandConfig(String value) {
         this.value = value;
-    }
-
-    /**
-     * @return String value of the enum
-     */
-    public final String getString(){
-        return value.toString();
-    }
-
-    /**
-     * @return double value of the enum
-     */
-    public final double getDouble() {
-        return Double.parseDouble(value.toString());
     }
 
     /**
      * @return Formatted component message
      */
-    public final Component getText() {
-        return MiniMessage.miniMessage().deserialize(value.toString());
+    public final Component getFormatted() {
+        return MiniMessage.miniMessage().deserialize(value);
     }
 
     /**
@@ -60,7 +45,7 @@ public enum CommandConfig {
      */
     public final Component addComponent(Component component) {
         return MiniMessage.miniMessage().deserialize(
-                value.toString(),
+                value,
                 Placeholder.component("component", component)
         );
     }
