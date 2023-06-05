@@ -37,7 +37,7 @@ public final class Toolkit {
             rabbitManager.close();
 
         if (jedisPool != null) {
-            LOGGER.info("Jedis activity connections: " + jedisPool.getNumActive());
+            LOGGER.info("Jedis active connections: " + jedisPool.getNumActive());
             jedisPool.destroy();
         }
     }

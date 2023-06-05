@@ -70,10 +70,8 @@ public class PlayerData {
      */
     public static Optional<PlayerData> getPlayerData(@NotNull Toolkit toolkit,
                                                      @NotNull UUID uuid) {
-        System.out.println("GET PLAYER DATA :))");
         PlayerDataCache dataCache = new PlayerDataCache(toolkit.getJedisPool());
         Optional<HashMap<PlayerDataType, Optional<String>>> cachedOptData = dataCache.getAllData(uuid);
-        System.out.println("CACHED PLAYER DATA - " + cachedOptData);
         if (cachedOptData.isPresent()) {
             Map<PlayerDataType, Optional<String>> cachedData = cachedOptData.get();
 
@@ -83,11 +81,8 @@ public class PlayerData {
                     .map(Map.Entry::getKey)
                     .toList();
 
-            System.out.println("MISSING PLAYER DATA - " + missingDataTypeValues);
-
             // if none values are missing, that means all the data was successfully retrived from the cache
             if (missingDataTypeValues.isEmpty()) {
-                System.out.println("FROM KAŠE");
                 return Optional.of(initializePlayerDataFromHashMap(uuid, cachedData));
             } else {
                 // get the missing DataTypes values
@@ -104,8 +99,6 @@ public class PlayerData {
                         .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().get()));
                 dataCache.updateData(uuid, cacheUpdateData);
 
-                System.out.println("DATABASE MAPPED PLAYER DATA - " + databaseOptData);
-
                 // merge the retrieved data from cache (if any is there) and database
                 Map<PlayerDataType, Optional<String>> finalMap = new HashMap<>(databaseOptData);
                 if (!cachedData.isEmpty()){
@@ -113,12 +106,9 @@ public class PlayerData {
                 }
                 finalMap.putAll(databaseOptData);
 
-                System.out.println("FINAL MAP MERGED - " + finalMap);
-                System.out.println("FROM MERGED");
                 return Optional.of(initializePlayerDataFromHashMap(uuid, finalMap));
             }
         } else {
-            System.out.println("FROM DAB");
             return getAllDataFromDatabase(toolkit, uuid);
         }
     }
@@ -191,7 +181,6 @@ public class PlayerData {
                 return Optional.empty();
             }
         } catch (SQLException e) {
-            System.out.println("RUNTIME EXCEPTION 22");
             Toolkit.LOGGER.log(Level.SEVERE, "Exception occurred while getting PlayerData object by UUID " + uuid, e);
             return Optional.empty();
         }

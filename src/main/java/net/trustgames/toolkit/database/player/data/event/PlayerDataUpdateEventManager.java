@@ -60,7 +60,6 @@ public class PlayerDataUpdateEventManager {
             queue = channel.queueDeclare("", false, true, false, null).getQueue();
             channel.queueBind(queue, exchange.getName(), exchange.getRoutingKey());
         } catch (IOException e) {
-            System.out.println("RUNTIME EXCEPTION 21");
             LOGGER.log(Level.SEVERE, "Exception occurred while creating consumer queue for exchange " + exchange.getName(), e);
             return;
         }

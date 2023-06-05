@@ -51,7 +51,6 @@ public class PlayerDataCache {
      * @return Optional with Strings of values or null
      */
     public Optional<HashMap<PlayerDataType, Optional<String>>> getAllData(@NotNull UUID uuid){
-        System.out.println("CACHE ALL DATA LUL");
         if (pool == null) {
             return Optional.empty();
         }
@@ -72,7 +71,6 @@ public class PlayerDataCache {
 
             jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
 
-            System.out.println("CACHE ALL DATA MAP - " + resultMap);
             return Optional.of(resultMap);
         }
     }
@@ -146,7 +144,6 @@ public class PlayerDataCache {
      */
     public void updateAllData(@NotNull UUID uuid,
                               @NotNull PlayerData data) {
-        System.out.println("UPDATE HMM???");
         if (pool == null) return;
 
         try (Jedis jedis = pool.getResource()) {

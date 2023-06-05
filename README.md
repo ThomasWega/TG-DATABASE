@@ -9,14 +9,12 @@ Common usage util for TrustGames.net plugins
 - Cooldown values
 - Permissions
 - Server values
-- Player activity types
 - Player data intervals
 - Player data types
 - RabbitMQ exchanges
 - RabbitMQ queues
 
 ###### Features:
-- Player Activity Database + fetching
 - Player Data Database + fetching
 - Player Data Cache
 - Player Data update event

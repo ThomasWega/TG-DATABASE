@@ -38,7 +38,6 @@ public final class SkinFetcher {
     public Optional<Skin> fetch(String playerName) {
         Optional<Skin> optSkinData = skinCache.getSkin(playerName);
         if (optSkinData.isPresent()) {
-            System.out.println("SKIN - FROM CACHE");
             return optSkinData;
         }
         try {
@@ -55,7 +54,6 @@ public final class SkinFetcher {
 
             Skin skin = new Skin(texture, signature);
             skinCache.updateSkin(playerName, skin);
-            System.out.println("SKIN - FROM MOJANG");
             return Optional.of(skin);
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Could not get skin data for name " + playerName + " from session servers!", e);
@@ -67,6 +65,10 @@ public final class SkinFetcher {
      * @see SkinFetcher#fetch(String)
      */
     public CompletableFuture<Optional<Skin>> fetchAsync(String playerName) {
-        return CompletableFuture.supplyAsync(() -> fetch(playerName));
+        return CompletableFuture.supplyAsync(() -> fetch(playerName))
+                .exceptionally(throwable -> {
+                    Toolkit.LOGGER.log(Level.SEVERE, "Exception occurred while getting Skin texture and signature by name " + playerName + " async", throwable);
+                    return Optional.empty();
+                });
     }
 }

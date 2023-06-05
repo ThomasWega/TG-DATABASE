@@ -50,7 +50,6 @@ public final class HikariManager {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            System.out.println("RUNTIME EXCEPTION 1");
             throw new RuntimeException("Exception occurred while getting a new connection from HikariCP Pool", e);
         }
     }
@@ -68,7 +67,6 @@ public final class HikariManager {
                             Thread.sleep(500L);
                             onDataSourceInitialized(callback);
                         } catch (InterruptedException e) {
-                            System.out.println("RUNTIME EXCEPTION 10");
                             LOGGER.log(Level.SEVERE, "Exception occurred while sleeping the HikariCP data source initialization thread", e);
                         }
                     }
@@ -102,7 +100,6 @@ public final class HikariManager {
                             statement.executeUpdate();
                         }
                     } catch (SQLException e) {
-                        System.out.println("RUNTIME EXCEPTION 11");
                         throw new RuntimeException("Database access error occurred while trying to create missing " + tableName + " table in the database", e);
                     }
                 })
@@ -113,7 +110,7 @@ public final class HikariManager {
     }
 
     public void close() {
-        Toolkit.LOGGER.info("HikariCP activity connections: " + dataSource.getHikariPoolMXBean().getActiveConnections());
+        Toolkit.LOGGER.info("HikariCP active connections: " + dataSource.getHikariPoolMXBean().getActiveConnections());
         dataSource.close();
     }
 }

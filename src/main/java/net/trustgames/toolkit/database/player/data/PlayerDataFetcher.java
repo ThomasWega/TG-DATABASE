@@ -57,15 +57,12 @@ public final class PlayerDataFetcher {
     private Optional<Object> fetchByKey(@NotNull FetchKey key,
                                          @NotNull String keyValue,
                                          @NotNull PlayerDataType dataType) {
-        System.out.println("UUID FETCH");
         String label = dataType.getColumnName();
         try (Connection connection = hikariManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(generateSQLQueryForFetch(key, keyValue, dataType))) {
-            System.out.println("IDK HNSTLY");
             try (ResultSet results = statement.executeQuery()) {
                 if (results.next()) {
                     Object object = results.getObject(label);
-                    System.out.println("THIS IS GOOD YEYj - " + object);
                     return Optional.of(object);
                 }
                 return Optional.empty();
@@ -87,15 +84,12 @@ public final class PlayerDataFetcher {
     private Map<PlayerDataType, Optional<Object>> fetchCollectionByKey(@NotNull FetchKey key,
                                                                        @NotNull String keyValue,
                                                                        @NotNull Collection<PlayerDataType> dataTypes) {
-        System.out.println("DATA TYPES FETCH - " + dataTypes);
         Map<PlayerDataType, Optional<Object>> fetchedData = new HashMap<>();
         try (Connection connection = hikariManager.getConnection(); PreparedStatement statement = connection.prepareStatement(generateSQLQueryForCollection(key, keyValue, dataTypes))) {
-            System.out.println("ONE TO THE ONE TO THE TWO");
             try (ResultSet results = statement.executeQuery()) {
                 if (results.next()) {
                     for (PlayerDataType dataType : dataTypes){
                         Object object = results.getObject(dataType.getColumnName());
-                        System.out.println("SOUT SOUT - " + object);
                         fetchedData.put(dataType, Optional.ofNullable(object));
                     }
                 }
@@ -168,17 +162,14 @@ public final class PlayerDataFetcher {
     private void modifyByUUID(@NotNull UUID uuid,
                               @NotNull PlayerDataType dataType,
                               @NotNull Object newValue) {
-        System.out.println("MODIFY :P -- " + dataType.name());
         try (Connection connection = hikariManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(generateSQLQueryForModify(dataType))) {
-            System.out.println("MODIFY OH?");
             connection.setAutoCommit(false);
             statement.setString(1, uuid.toString());
             statement.setObject(2, newValue);
             statement.executeUpdate();
             connection.commit();
 
-            System.out.println("MODIFY SO WHAT IS - " + newValue);
             dataCache.updateData(uuid, dataType, newValue.toString());
             new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
         } catch (SQLException e) {
@@ -213,7 +204,6 @@ public final class PlayerDataFetcher {
             handleLevelUpdate(uuid, Integer.parseInt(newValue.toString()), ModifyAction.SET);
             return;
         }
-        System.out.println("SET - " + newValue);
         modifyByUUID(uuid, dataType, newValue);
     }
 
@@ -245,9 +235,7 @@ public final class PlayerDataFetcher {
     public void addData(@NotNull UUID uuid,
                         @NotNull PlayerDataType dataType,
                         int addValue) {
-        System.out.println("ADD - " + addValue);
         Optional<?> currentValue = resolveData(uuid, dataType);
-        System.out.println("CURRENT ADD - " + currentValue);
         if (currentValue.isEmpty()) return;
 
         if (dataType == PlayerDataType.XP) {
@@ -259,9 +247,7 @@ public final class PlayerDataFetcher {
             return;
         }
 
-        System.out.println("HIHIHIHIH - " + currentValue);
         int newValue = Integer.parseInt(currentValue.get().toString()) + addValue;
-        System.out.println("ADD FINAL - " + newValue);
 
         modifyByUUID(uuid, dataType, newValue);
     }
@@ -295,9 +281,7 @@ public final class PlayerDataFetcher {
     public void subtractData(@NotNull UUID uuid,
                              @NotNull PlayerDataType dataType,
                              int subtractValue) {
-        System.out.println("REMOVE - " + subtractValue);
         Optional<?> currentValue = resolveData(uuid, dataType);
-        System.out.println("CURRENT REMOVE - " + currentValue);
 
         if (currentValue.isEmpty()) return;
 
@@ -311,7 +295,6 @@ public final class PlayerDataFetcher {
         }
 
         int newValue = Integer.parseInt(currentValue.get().toString()) - subtractValue;
-        System.out.println("REMOVE FINAL - " + newValue);
 
         modifyByUUID(uuid, dataType, newValue);
     }
@@ -419,24 +402,17 @@ public final class PlayerDataFetcher {
      * @return Optional of the player's UUID or empty
      */
     public Optional<UUID> resolveUUID(@NotNull String playerName) {
-        System.out.println("UUID");
         Optional<UUID> optCachedUuid = dataCache.getUUID(playerName);
-        System.out.println("SOMETHING IN THE CACHE? " + optCachedUuid);
         if (optCachedUuid.isEmpty()) {
             Optional<?> optDatabaseUuid = fetchByKey(FetchKey.NAME, playerName, PlayerDataType.UUID);
-            System.out.println("SOMETHING IN THE DATABASE? " + optDatabaseUuid);
             if (optDatabaseUuid.isEmpty()) {
-                System.out.println("EMPTOS");
                 return Optional.empty();
             }
 
             Optional<UUID> databaseUuid = optDatabaseUuid.map(o -> UUID.fromString(o.toString()));
-            System.out.println("DATAB DATAB " + databaseUuid);
             dataCache.updateUUID(playerName, databaseUuid.get());
-            System.out.println("UPDAB");
             return databaseUuid;
         }
-        System.out.println("RERUNIK HERE " + optCachedUuid);
         return optCachedUuid;
     }
 
@@ -464,10 +440,8 @@ public final class PlayerDataFetcher {
      */
     public Optional<?> resolveData(@NotNull UUID uuid,
                                    @NotNull PlayerDataType dataType) {
-        System.out.println("DATA - UUID");
         Optional<String> optCachedUuid = dataCache.getData(uuid, dataType);
         if (optCachedUuid.isEmpty()) {
-            System.out.println("NO CACHE KAŠe?");
             if (dataType == PlayerDataType.LEVEL) {
                 Optional<Integer> levelData = convertXpToLevels(
                         fetchByKey(FetchKey.UUID, uuid.toString(), PlayerDataType.XP)
@@ -477,11 +451,9 @@ public final class PlayerDataFetcher {
                 return levelData;
             }
             Optional<Object> optDatabaseData = fetchByKey(FetchKey.UUID, uuid.toString(), dataType);
-            System.out.println("DATAB - " + optDatabaseData);
             optDatabaseData.ifPresent(data -> dataCache.updateData(uuid, dataType, data.toString()));
             return optDatabaseData;
         }
-        System.out.println("KAše - " + optCachedUuid);
         return optCachedUuid;
     }
 
@@ -497,7 +469,6 @@ public final class PlayerDataFetcher {
      */
     public Optional<?> resolveData(@NotNull String playerName,
                                    @NotNull PlayerDataType dataType) {
-        System.out.println("DATA - NAME");
         Optional<UUID> optUuid = resolveUUID(playerName);
         if (optUuid.isEmpty()) {
             return Optional.empty();
@@ -520,7 +491,6 @@ public final class PlayerDataFetcher {
 
     public CompletableFuture<Optional<?>> resolveDataAsync(@NotNull String playerName,
                                                            @NotNull PlayerDataType dataType) {
-        System.out.println("BEFORE DATA - NAME (CORRECT?)");
         return CompletableFuture.supplyAsync(() -> resolveData(playerName, dataType))
                 .handle((result, exception) -> {
                     if (exception != null) {
@@ -544,7 +514,6 @@ public final class PlayerDataFetcher {
      */
     public OptionalInt resolveIntData(@NotNull UUID uuid,
                                       @NotNull PlayerDataType dataType) {
-        System.out.println("DATA INT - UUID");
         return convertOptional(
                 resolveData(uuid, dataType)
                         .map(o -> Integer.parseInt(o.toString()))
@@ -563,7 +532,6 @@ public final class PlayerDataFetcher {
      */
     public OptionalInt resolveIntData(@NotNull String playerName,
                                       @NotNull PlayerDataType dataType) {
-        System.out.println("DATA INT - NAME");
         Optional<UUID> optUuid = resolveUUID(playerName);
         if (optUuid.isEmpty()) {
             return OptionalInt.empty();
@@ -728,7 +696,6 @@ public final class PlayerDataFetcher {
         queryBuilder.append(" FROM ").append(tableName);
         queryBuilder.append(" WHERE ").append(key.getDataType().getColumnName()).append(" = \"").append(keyValue).append("\"");
 
-        System.out.println("SQL QUERY = " + queryBuilder);
         return queryBuilder.toString();
     }
 
