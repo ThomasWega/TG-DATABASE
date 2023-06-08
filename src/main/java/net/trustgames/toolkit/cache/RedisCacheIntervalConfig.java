@@ -1,14 +1,12 @@
-package net.trustgames.toolkit.database.player.data.config;
+package net.trustgames.toolkit.cache;
 
-public enum PlayerDataIntervalConfig {
-    UPDATE(5000),
-    DATA_EXPIRY(300000);
-
-    // values are in milliseconds
+// values are in milliseconds
+public enum RedisCacheIntervalConfig {
+    EXPIRY(300000);
 
     private final long value;
 
-    PlayerDataIntervalConfig(long value) {
+    RedisCacheIntervalConfig(long value) {
         this.value = value;
     }
 

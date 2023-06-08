@@ -1,7 +1,5 @@
-package net.trustgames.toolkit.database.player.data.cache;
+package net.trustgames.toolkit.database.player.data;
 
-import net.trustgames.toolkit.database.player.data.PlayerData;
-import net.trustgames.toolkit.database.player.data.config.PlayerDataIntervalConfig;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,6 +8,8 @@ import redis.clients.jedis.JedisPool;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static net.trustgames.toolkit.cache.RedisCache.expire;
 
 public class PlayerDataCache {
 
@@ -39,7 +39,7 @@ public class PlayerDataCache {
 
         try (Jedis jedis = pool.getResource()) {
             String result = jedis.hget(uuid.toString(), dataType.getColumnName());
-            jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
+            expire(pool, uuid.toString());
             return Optional.ofNullable(result);
         }
     }
@@ -69,7 +69,7 @@ public class PlayerDataCache {
                             HashMap::new
                     ));
 
-            jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
+            expire(pool, uuid.toString());
 
             return Optional.of(resultMap);
         }
@@ -89,7 +89,7 @@ public class PlayerDataCache {
         String uuidString;
         try (Jedis jedis = pool.getResource()) {
             uuidString = jedis.hget(playerName, PlayerDataType.UUID.getColumnName());
-            jedis.expire(playerName, PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
+            expire(pool, playerName);
         }
 
         if (uuidString == null){
@@ -113,7 +113,7 @@ public class PlayerDataCache {
         try (Jedis jedis = pool.getResource()) {
             String column = dataType.getColumnName();
             jedis.hset(uuid.toString(), column, value);
-            jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
+            expire(pool, uuid.toString());
         }
     }
 
@@ -132,7 +132,7 @@ public class PlayerDataCache {
                     .collect(Collectors.toMap(entry -> entry.getKey().getColumnName(), Map.Entry::getValue));
 
             jedis.hmset(uuid.toString(), labelMap);
-            jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
+            expire(pool, uuid.toString());
         }
     }
 
@@ -158,7 +158,7 @@ public class PlayerDataCache {
                     PlayerDataType.GEMS.getColumnName(),String.valueOf( data.getGems()),
                     PlayerDataType.RUBIES.getColumnName(), String.valueOf(data.getRubies())
             ));
-            jedis.expire(uuid.toString(), PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
+            expire(pool, uuid.toString());
         }
     }
 
@@ -173,30 +173,7 @@ public class PlayerDataCache {
         if (pool == null) return;
         try (Jedis jedis = pool.getResource()) {
             jedis.hset(playerName, PlayerDataType.UUID.getColumnName(), uuid.toString());
-            jedis.expire(playerName, PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
-        }
-    }
-
-    /**
-     * Expire the specified key in the cache with the duration configured in config
-     *
-     * @param key Key to expire
-     * @see PlayerDataCache#expire(String, long)
-     */
-    public void expire(@NotNull String key) {
-        expire(key, PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
-    }
-
-    /**
-     * Expire the specified key in the cache with the given duration
-     *
-     * @param key Key to expire
-     * @see PlayerDataCache#expire(String)
-     */
-    public void expire(@NotNull String key, long seconds) {
-        if (pool == null) return;
-        try (Jedis jedis = pool.getResource()) {
-            jedis.expire(key, seconds);
+            expire(pool, uuid.toString());
         }
     }
 }

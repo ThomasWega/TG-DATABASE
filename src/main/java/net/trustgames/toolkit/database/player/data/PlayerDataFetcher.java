@@ -2,7 +2,6 @@ package net.trustgames.toolkit.database.player.data;
 
 import lombok.Getter;
 import net.trustgames.toolkit.Toolkit;
-import net.trustgames.toolkit.database.player.data.cache.PlayerDataCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.database.player.data.event.PlayerDataUpdateEvent;
 import net.trustgames.toolkit.database.HikariManager;
@@ -59,7 +58,8 @@ public final class PlayerDataFetcher {
                                          @NotNull PlayerDataType dataType) {
         String label = dataType.getColumnName();
         try (Connection connection = hikariManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(generateSQLQueryForFetch(key, keyValue, dataType))) {
+             PreparedStatement statement = connection.prepareStatement(generateSQLQueryForFetch(key, dataType))) {
+            statement.setString(1, keyValue);
             try (ResultSet results = statement.executeQuery()) {
                 if (results.next()) {
                     Object object = results.getObject(label);
@@ -695,6 +695,7 @@ public final class PlayerDataFetcher {
         queryBuilder.append(String.join(", ", labels));
         queryBuilder.append(" FROM ").append(tableName);
         queryBuilder.append(" WHERE ").append(key.getDataType().getColumnName()).append(" = \"").append(keyValue).append("\"");
+        queryBuilder.append(" LIMIT 1");
 
         return queryBuilder.toString();
     }
@@ -703,12 +704,11 @@ public final class PlayerDataFetcher {
      * Generates the SQL statement based on the given values
      *
      * @param fetchKey Key to determine the row by
-     * @param keyValue The value of the key parameter
      * @param dataType Data type to fetch
      * @return SQL statement
      */
-    private String generateSQLQueryForFetch(FetchKey fetchKey, String keyValue,  PlayerDataType dataType) {
-        return "SELECT " + dataType.getColumnName() + " FROM " + tableName + " WHERE " + fetchKey.getDataType().getColumnName() + " = \"" + keyValue + "\"";
+    private String generateSQLQueryForFetch(FetchKey fetchKey,  PlayerDataType dataType) {
+        return "SELECT " + dataType.getColumnName() + " FROM " + tableName + " WHERE " + fetchKey.getDataType().getColumnName() + " = ? LIMIT 1";
     }
 
     /**

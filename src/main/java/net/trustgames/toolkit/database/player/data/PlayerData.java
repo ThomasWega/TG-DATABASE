@@ -3,7 +3,6 @@ package net.trustgames.toolkit.database.player.data;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.trustgames.toolkit.Toolkit;
-import net.trustgames.toolkit.database.player.data.cache.PlayerDataCache;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.utils.LevelUtils;
 import org.jetbrains.annotations.NotNull;
