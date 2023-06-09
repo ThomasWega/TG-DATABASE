@@ -1,6 +1,6 @@
 package net.trustgames.toolkit.skin;
 
-import net.trustgames.toolkit.database.player.data.config.PlayerDataIntervalConfig;
+import net.trustgames.toolkit.cache.RedisCacheIntervalConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.Jedis;
@@ -30,7 +30,7 @@ public class SkinCache {
 
         try (Jedis jedis = pool.getResource()) {
             List<String> fetchList = jedis.hmget(playerName, "skin_texture", "skin_signature");
-            jedis.expire(playerName, PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
+            jedis.expire(playerName, RedisCacheIntervalConfig.EXPIRY.getSeconds());
 
             if (fetchList.contains(null)) return Optional.empty();
             return Optional.of(new Skin(fetchList.get(0), fetchList.get(1)));
@@ -52,7 +52,7 @@ public class SkinCache {
                     "skin_texture", skin.texture(),
                     "skin_signature", skin.signature()
             ));
-            jedis.expire(playerName, PlayerDataIntervalConfig.DATA_EXPIRY.getSeconds());
+            jedis.expire(playerName, RedisCacheIntervalConfig.EXPIRY.getSeconds());
         }
     }
 }
