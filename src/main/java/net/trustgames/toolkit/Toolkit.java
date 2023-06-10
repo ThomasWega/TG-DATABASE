@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.trustgames.toolkit.database.HikariManager;
 import net.trustgames.toolkit.message_queue.RabbitManager;
+import net.trustgames.toolkit.message_queue.event.RabbitEventManager;
 import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.JedisPool;
 
@@ -21,6 +22,9 @@ public final class Toolkit {
     @Setter
     @Nullable
     private JedisPool jedisPool = null;
+    @Getter
+    @Setter
+    private RabbitEventManager rabbitEventManager = null;
 
     public static void main(String[] args) {
     }

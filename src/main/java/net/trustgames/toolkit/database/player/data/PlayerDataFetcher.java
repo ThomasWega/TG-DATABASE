@@ -2,10 +2,11 @@ package net.trustgames.toolkit.database.player.data;
 
 import lombok.Getter;
 import net.trustgames.toolkit.Toolkit;
+import net.trustgames.toolkit.database.HikariManager;
 import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
 import net.trustgames.toolkit.database.player.data.event.PlayerDataUpdateEvent;
-import net.trustgames.toolkit.database.HikariManager;
-import net.trustgames.toolkit.message_queue.RabbitManager;
+import net.trustgames.toolkit.database.player.data.event.PlayerDataUpdateEventConfig;
+import net.trustgames.toolkit.message_queue.event.RabbitEventManager;
 import net.trustgames.toolkit.utils.LevelUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,11 +25,9 @@ import static net.trustgames.toolkit.utils.LevelUtils.getProgress;
 import static net.trustgames.toolkit.utils.LevelUtils.getThreshold;
 
 public final class PlayerDataFetcher {
-
     private final HikariManager hikariManager;
-    private final RabbitManager rabbitManager;
     private final PlayerDataCache dataCache;
-
+    private final RabbitEventManager eventManager;
     private final Logger LOGGER = Toolkit.LOGGER;
 
     /**
@@ -40,7 +39,7 @@ public final class PlayerDataFetcher {
      */
     public PlayerDataFetcher(@NotNull Toolkit toolkit) {
         this.hikariManager = toolkit.getHikariManager();
-        this.rabbitManager = toolkit.getRabbitManager();
+        this.eventManager = toolkit.getRabbitEventManager();
         this.dataCache = new PlayerDataCache(toolkit.getJedisPool());
     }
 
@@ -171,7 +170,9 @@ public final class PlayerDataFetcher {
             connection.commit();
 
             dataCache.updateData(uuid, dataType, newValue.toString());
-            new PlayerDataUpdateEvent(rabbitManager, uuid, dataType).publish();
+
+            PlayerDataUpdateEvent event = new PlayerDataUpdateEvent(uuid, dataType);
+            eventManager.publish(event, new PlayerDataUpdateEventConfig().config());
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Exception occurred while modifying " + dataType.getColumnName() + " data type in the database by UUID " + uuid, e);
         }
