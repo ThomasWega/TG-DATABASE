@@ -18,7 +18,7 @@ public class PlayerDataUpdateEventConfig implements RabbitEventConfigFactory<Pla
         return new RabbitEventConfigBuilder<PlayerDataUpdateEvent>()
                 .exchangeName("event.player-data-update")
                 .exchangeType(BuiltinExchangeType.FANOUT)
-                .exchangeRoutingKey("player-data-update#")
+                .exchangeRoutingKey("player-data-update.#")
                 .properties(new AMQP.BasicProperties().builder().expiration("10000").build())
                 .toJson(event -> new JSONObject()
                         .put("uuid", event.uuid())

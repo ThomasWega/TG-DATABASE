@@ -38,7 +38,7 @@ public interface EventSubscriber<E> {
      *
      * @param event the event
      */
-    void onEvent(final @NotNull E event) throws Throwable;
+    void onEvent(final @NotNull E event);
 
     /**
      * Gets the post order this subscriber should be called at.
@@ -51,6 +51,7 @@ public interface EventSubscriber<E> {
 
     /**
      * Gets if cancelled events should be consumed by this subscriber.
+     * <p>Default = false</p>
      *
      * @return {@code true} if cancelled events should be consumed, {@code false} otherwise
      */

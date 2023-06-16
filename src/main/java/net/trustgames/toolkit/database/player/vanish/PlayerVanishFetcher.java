@@ -3,7 +3,9 @@ package net.trustgames.toolkit.database.player.vanish;
 import net.trustgames.toolkit.Toolkit;
 import net.trustgames.toolkit.database.HikariManager;
 import net.trustgames.toolkit.database.player.data.PlayerDataFetcher;
-import net.trustgames.toolkit.message_queue.RabbitManager;
+import net.trustgames.toolkit.database.player.vanish.event.PlayerVanishEvent;
+import net.trustgames.toolkit.database.player.vanish.event.PlayerVanishEventConfig;
+import net.trustgames.toolkit.message_queue.event.RabbitEventManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
@@ -18,14 +20,13 @@ import static net.trustgames.toolkit.database.player.vanish.PlayerVanishDB.table
 public class PlayerVanishFetcher {
     private final HikariManager hikariManager;
     private final PlayerVanishCache vanishCache;
-    private final RabbitManager rabbitManager;
+    private final RabbitEventManager eventManager;
     private final PlayerDataFetcher dataFetcher;
-    // TODO add rabbitmq event
 
     public PlayerVanishFetcher(@NotNull Toolkit toolkit) {
         this.hikariManager = toolkit.getHikariManager();
         this.vanishCache = new PlayerVanishCache(toolkit.getJedisPool());
-        this.rabbitManager = toolkit.getRabbitManager();
+        this.eventManager = toolkit.getRabbitEventManager();
         this.dataFetcher = new PlayerDataFetcher(toolkit);
     }
 
@@ -84,13 +85,13 @@ public class PlayerVanishFetcher {
      * Create a row for the given UUID.
      * aka. setting the vanish on for the Player
      *
-     * @param uuid UUID to create the row for
+     * @param uuid      UUID to create the row for
      * @param timestamp Time the Vanish was set on
+     * @return Whether the row was created (false if existed already or error happened)
      * @see PlayerVanishFetcher#rowExists(UUID)
      */
     private boolean createRow(@NotNull UUID uuid,
                               @NotNull Timestamp timestamp) {
-        boolean rowCreated;
         try (Connection connection = hikariManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(
                      "INSERT IGNORE INTO  " + tableName + "(uuid, time) VALUES (?, ?)")) {
@@ -99,7 +100,10 @@ public class PlayerVanishFetcher {
             connection.setAutoCommit(false);
             int rowsAffected = statement.executeUpdate();
             connection.commit();
-            rowCreated = (rowsAffected > 0);
+            boolean rowCreated = (rowsAffected > 0);
+            if (rowCreated) {
+                eventManager.publish(new PlayerVanishEvent(uuid, PlayerVanishEvent.Action.ON), new PlayerVanishEventConfig().config());
+            }
             return rowCreated;
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Exception occurred while creating a row for " + uuid + " in the table " + tableName, e);
@@ -112,17 +116,24 @@ public class PlayerVanishFetcher {
      * aka. removing the vanish from the Player
      *
      * @param uuid UUID to remove the row by
+     * @return Whether the row was created (false if existed already or error happened)
      */
-    private void removeRow(@NotNull UUID uuid) {
+    private boolean removeRow(@NotNull UUID uuid) {
         try (Connection connection = hikariManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(
                      "DELETE FROM " + tableName + " WHERE uuid = ?")) {
             statement.setString(1, uuid.toString());
             connection.setAutoCommit(false);
-            statement.executeUpdate();
+            int rowsAffected = statement.executeUpdate();
             connection.commit();
+            boolean rowDeleted = (rowsAffected > 0);
+            if (rowDeleted) {
+                eventManager.publish(new PlayerVanishEvent(uuid, PlayerVanishEvent.Action.OFF), new PlayerVanishEventConfig().config());
+            }
+            return rowDeleted;
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Exception occurred while removing a row for " + uuid + " in the table " + tableName, e);
+            return false;
         }
     }
 
@@ -167,7 +178,7 @@ public class PlayerVanishFetcher {
         return resolveVanishTime(uuid);
     }
 
-        public void setVanish(@NotNull UUID uuid) {
+    public void setVanish(@NotNull UUID uuid) {
         vanishCache.setVanish(uuid, true);
         Timestamp timeNow = Timestamp.from(Instant.now());
         boolean created = createRow(uuid, timeNow);
