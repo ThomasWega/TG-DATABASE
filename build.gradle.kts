@@ -51,7 +51,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "net.trustgames"
             artifactId = "toolkit"
-            version = "0.1-SNAPSHOT"
+            version = version
             from(components["java"])
         }
     }
