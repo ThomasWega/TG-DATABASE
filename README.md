@@ -32,4 +32,14 @@ Common usage util for TrustGames.net plugins
 - Component conversion Util
 - Placeholders (MiniPlaceholders)
 
+###### How to get Toolkit:
+TG-Toolkit is self-hosted on a server. To be able to reach that server you need to set the server up credentials first. 
+Open (or create) gradle.properties in your local ~/.gradle/gradle.properties
+
+**_gradle.properties_**
+```
+trustgamesRepoPrivateUsername={username}
+trustgamesRepoPrivatePassword={secret}
+```
+
 
