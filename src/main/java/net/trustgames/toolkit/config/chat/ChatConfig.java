@@ -1,11 +1,12 @@
 package net.trustgames.toolkit.config.chat;
 
+import io.github.miniplaceholders.api.MiniPlaceholders;
 import lombok.Getter;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.trustgames.toolkit.config.PermissionConfig;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,20 +44,15 @@ public enum ChatConfig {
     }
 
     /**
-     * {@literal Replaces tags with <player_name> and <player_prefix>}
+     * Replaces the placeholder tags
      *
-     * @param playerName Name of the player
-     * @param prefix LuckPerms prefix the player has
+     * @param audience Audience (Player) that sent the message
      * @return New formatted Component message with replaced tags
      */
-    public final Component formatMessage(@NotNull String playerName,
-                                         @NotNull Component prefix) {
+    public final Component formatMessage(@NotNull Audience audience) {
         return MiniMessage.miniMessage().deserialize(
                 value,
-                TagResolver.builder()
-                        .resolver(Placeholder.unparsed("player_name", playerName))
-                        .resolver(Placeholder.component("prefix", prefix))
-                        .build()
+                MiniPlaceholders.getAudiencePlaceholders(audience)
         );
     }
 
