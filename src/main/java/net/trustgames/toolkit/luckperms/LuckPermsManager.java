@@ -6,6 +6,7 @@ import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.group.GroupManager;
 import net.luckperms.api.model.user.User;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -98,18 +99,17 @@ public final class LuckPermsManager {
      * @param user User to get prefix for
      * @return Player Prefix or Empty
      */
-    public static @NotNull String getOnlinePlayerPrefix(@NotNull User user) {
-        String prefixString = user.getCachedData().getMetaData().getPrefix();
+    public static @Nullable String getOnlinePlayerPrefix(@NotNull User user) {
 
-        return Objects.requireNonNullElse(prefixString, "");
+        return user.getCachedData().getMetaData().getPrefix();
     }
 
     /**
      * @see LuckPermsManager#getOnlinePlayerPrefix(User)
      */
-    public static @NotNull String getOnlinePlayerPrefix(@NotNull UUID uuid){
+    public static @Nullable String getOnlinePlayerPrefix(@NotNull UUID uuid){
         Optional<User> optUser = getOnlineUser(uuid);
-        return optUser.map(LuckPermsManager::getOnlinePlayerPrefix).orElse("");
+        return optUser.map(LuckPermsManager::getOnlinePlayerPrefix).orElse(null);
     }
 
     /**

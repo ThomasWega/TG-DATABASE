@@ -22,7 +22,7 @@ public class PlayerPrefixSpacedPlaceholder implements AudiencePlaceholder {
     public @Nullable Tag tag(@NotNull Audience audience, @NotNull ArgumentQueue queue, @NotNull Context ctx) {
         return audience.get(Identity.UUID)
                 .map(uuid -> Tag.selfClosingInserting(formatPrefix(uuid)))
-                .orElseGet(() -> Tag.selfClosingInserting(Component.empty()));
+                .orElse(null);
     }
 
     private Component formatPrefix(UUID uuid) {
@@ -31,11 +31,9 @@ public class PlayerPrefixSpacedPlaceholder implements AudiencePlaceholder {
             return Component.empty();
         }
         User user = optUser.get();
-        String primaryGroup = user.getPrimaryGroup();
-        Component prefix = ColorUtils.color(LuckPermsManager.getOnlinePlayerPrefix(user));
-        if (!(primaryGroup.equals("default"))) {
-            prefix = prefix.appendSpace();
-        }
-        return prefix;
+        return ColorUtils.color(Optional.ofNullable(LuckPermsManager.getOnlinePlayerPrefix(user))
+                .map(prefix -> prefix + " ")
+                .orElse("")
+        );
     }
 }
