@@ -16,8 +16,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName;
-
 @Data
 @AllArgsConstructor
 public class PlayerData {
@@ -32,6 +30,8 @@ public class PlayerData {
     private float levelProgress;
     private int gems;
     private int rubies;
+
+    private static final String tableName = PlayerDataDB.getTableName();
 
     /**
      * @see PlayerData#getPlayerData(Toolkit, UUID)

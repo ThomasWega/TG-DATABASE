@@ -1,30 +1,28 @@
 package net.trustgames.toolkit.database.player.data;
 
 
-import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
+import lombok.Getter;
+import net.trustgames.toolkit.database.DatabaseTable;
 import net.trustgames.toolkit.database.HikariManager;
+import net.trustgames.toolkit.database.player.data.config.PlayerDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 
 /**
  * This class handles the creation of the data database table
  */
-public final class PlayerDataDB {
+public final class PlayerDataDB extends DatabaseTable {
 
-    public static final String tableName = "player_data";
-    private final HikariManager hikariManager;
+    @Getter
+    private static final String tableName = "player_data";
 
-    public PlayerDataDB(HikariManager hikariManager) {
-        this.hikariManager = hikariManager;
-        initializeTable();
+    public PlayerDataDB(@NotNull HikariManager hikariManager) {
+        super(hikariManager, tableName);
     }
 
-    /**
-     * use external method from MariaDB class
-     * with specified SQL statement to create a new table
-     * (is run async)
-     */
-    public void initializeTable() {
+    @Override
+    protected String sqlStatement() {
         StringBuilder statement = new StringBuilder("CREATE TABLE IF NOT EXISTS ")
                 .append(tableName)
                 .append("(");
@@ -40,6 +38,6 @@ public final class PlayerDataDB {
         statement.deleteCharAt(statement.length() - 1);
         statement.append(")");
 
-        hikariManager.initializeTable(tableName, statement.toString());
+        return statement.toString();
     }
 }

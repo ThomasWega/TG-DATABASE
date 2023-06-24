@@ -93,7 +93,7 @@ public final class HikariManager {
      * @param tableName       The name of the table
      * @param stringStatement The SQL statement in String
      */
-    public void initializeTable(@NotNull String tableName, @NotNull String stringStatement) {
+    public void initializeTableAsync(@NotNull String tableName, @NotNull String stringStatement) {
         CompletableFuture.runAsync(() -> {
                     try (Connection connection = getConnection()) {
                         try (PreparedStatement statement = connection.prepareStatement(stringStatement)) {

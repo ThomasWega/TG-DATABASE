@@ -20,7 +20,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static net.trustgames.toolkit.database.player.data.PlayerDataDB.tableName;
 import static net.trustgames.toolkit.utils.LevelUtils.getProgress;
 import static net.trustgames.toolkit.utils.LevelUtils.getThreshold;
 
@@ -28,7 +27,8 @@ public final class PlayerDataFetcher {
     private final HikariManager hikariManager;
     private final PlayerDataCache dataCache;
     private final RabbitEventManager eventManager;
-    private final Logger LOGGER = Toolkit.LOGGER;
+    private static final Logger LOGGER = Toolkit.LOGGER;
+    private static final String tableName = PlayerDataDB.getTableName();
 
     /**
      * Handles the fetching data types, from the cache,
