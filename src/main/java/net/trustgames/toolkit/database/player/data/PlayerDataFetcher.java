@@ -28,6 +28,7 @@ public final class PlayerDataFetcher {
     private final PlayerDataCache dataCache;
     private final RabbitEventManager eventManager;
     private static final Logger LOGGER = Toolkit.LOGGER;
+    @Getter
     private static final String tableName = PlayerDataDB.getTableName();
 
     /**
@@ -722,30 +723,6 @@ public final class PlayerDataFetcher {
         String label = dataType.getColumnName();
         return "INSERT INTO " + tableName + "(" + PlayerDataType.UUID.getColumnName() + ", " + label + ") " +
                 "VALUES (?, ?) " + "ON DUPLICATE KEY UPDATE " + label + " = VALUES(" + label + ")";
-    }
-
-    /**
-     * Generates the SQL statement to modify all data types by UUID
-     *
-     * @return SQL statement
-     */
-    private String generateSQLQueryForModifyAll() {
-        List<PlayerDataType> dataTypes = Arrays.stream(PlayerDataType.values())
-                .filter(dataType -> dataType.getColumnType() != null)
-                .toList();
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("INSERT INTO ").append(tableName).append("(");
-        dataTypes.forEach(dataType -> sb.append(dataType.getColumnName()).append(", "));
-        sb.setLength(sb.length() - 2); // Remove the extra comma and space
-        sb.append(") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE ");
-        dataTypes.forEach(dataType ->
-                sb.append(dataType.getColumnName()).append(" = VALUES(").append(dataType.getColumnName()).append("), ")
-        );
-        sb.setLength(sb.length() - 2); // Remove the extra comma and space
-        sb.append(";");
-
-        return sb.toString();
     }
 
     /**
